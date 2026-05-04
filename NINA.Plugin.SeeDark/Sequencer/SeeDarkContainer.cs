@@ -44,7 +44,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         public SeeDarkContainer(
             SeeDarkPlugin plugin,
             IProfileService profileService,
-            [ImportMany] IEnumerable<Lazy<ISequenceItem, IDictionary<string, object>>> sequenceItems)
+            [ImportMany] IEnumerable<ISequenceItem> sequenceItems)
             : base(new SequentialStrategy()) {
             _plugin = plugin;
             TargetExposure = plugin.Settings.TargetExposure;
@@ -57,10 +57,9 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 "NINA", "SeeDark", $"seedark_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
 
             if (plugin.Settings.SeedSmartExposure) {
-                var seEntry = sequenceItems.FirstOrDefault(x =>
-                    x.Metadata.TryGetValue("Name", out var n) && "Smart Exposure".Equals(n?.ToString()));
-                if (seEntry != null) {
-                    var se = seEntry.Value.Clone() as ISequenceItem;
+                var proto = sequenceItems.FirstOrDefault(i => i.GetType().Name == "SmartExposure");
+                if (proto != null) {
+                    var se = proto.Clone() as ISequenceItem;
                     if (se != null) {
                         SetProp(se, "ExposureTime",         TargetExposure);
                         SetProp(se, "MinExposure",          TargetExposure);
