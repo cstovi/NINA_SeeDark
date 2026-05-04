@@ -11,6 +11,7 @@ using NINA.Core.Model;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Container.ExecutionStrategy;
 using NINA.Sequencer.SequenceItem;
+using NINA.Sequencer.SequenceItem.Imaging;
 
 namespace NINA.Plugin.SeeDark.Sequencer {
 
@@ -40,7 +41,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         }
 
         [ImportingConstructor]
-        public SeeDarkContainer(SeeDarkPlugin plugin) : base(new SequentialStrategy()) {
+        public SeeDarkContainer(SeeDarkPlugin plugin, SmartExposure smartExposure) : base(new SequentialStrategy()) {
             _plugin = plugin;
             TargetExposure = plugin.Settings.TargetExposure;
             Gain           = plugin.Settings.Gain;
@@ -50,6 +51,25 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             _logFilePath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "NINA", "SeeDark", $"seedark_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
+
+            if (plugin.Settings.SeedSmartExposure) {
+                var se = smartExposure.Clone() as ISequenceItem;
+                if (se != null) {
+                    SetProp(se, "ExposureTime",          TargetExposure);
+                    SetProp(se, "MinExposure",           TargetExposure);
+                    SetProp(se, "MaxExposure",           TargetExposure);
+                    SetProp(se, "Gain",                  Gain);
+                    SetProp(se, "ExposureCount",         20);
+                    SetProp(se, "DitherAfterExposures",  0);
+                    SetProp(se, "ImageType",             "DARK");
+                    se.AttachNewParent(this);
+                    Add(se);
+                }
+            }
+        }
+
+        private static void SetProp(object obj, string name, object val) {
+            try { obj.GetType().GetProperty(name)?.SetValue(obj, val); } catch { }
         }
 
         private SeeDarkContainer(SeeDarkContainer cloneMe) : base(new SequentialStrategy()) {
@@ -59,6 +79,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             Gain           = cloneMe.Gain;
             Name = "SeeDark Dark Gap Check";
             Icon = cloneMe.Icon;
+        }
+
+        [System.Runtime.Serialization.OnDeserializing]
+        private void OnDeserializing(System.Runtime.Serialization.StreamingContext context) {
+            Items.Clear();
         }
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token) {
