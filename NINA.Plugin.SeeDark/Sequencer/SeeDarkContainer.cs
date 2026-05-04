@@ -24,6 +24,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
     public class SeeDarkContainer : SequenceContainer {
 
         private readonly SeeDarkPlugin _plugin;
+        private readonly IProfileService _profileService;
         private readonly string _logFilePath;
 
         private double _targetExposure = 20.0;
@@ -41,12 +42,10 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         }
 
         [ImportingConstructor]
-        public SeeDarkContainer(
-            SeeDarkPlugin plugin,
-            IProfileService profileService,
-            [ImportMany] IEnumerable<ISequenceItem> sequenceItems)
+        public SeeDarkContainer(SeeDarkPlugin plugin, IProfileService profileService)
             : base(new SequentialStrategy()) {
             _plugin = plugin;
+            _profileService = profileService;
             TargetExposure = plugin.Settings.TargetExposure;
             Gain           = plugin.Settings.Gain;
             Name = "SeeDark Dark Gap Check";
@@ -55,30 +54,34 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             _logFilePath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "NINA", "SeeDark", $"seedark_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
+        }
 
-            if (plugin.Settings.SeedSmartExposure) {
-                var proto = sequenceItems.FirstOrDefault(i => i.GetType().Name == "SmartExposure");
-                if (proto != null) {
-                    var se = proto.Clone() as ISequenceItem;
-                    if (se != null) {
-                        SetProp(se, "ExposureTime",         TargetExposure);
-                        SetProp(se, "MinExposure",          TargetExposure);
-                        SetProp(se, "MaxExposure",          TargetExposure);
-                        SetProp(se, "Gain",                 Gain);
-                        SetProp(se, "ExposureCount",        20);
-                        SetProp(se, "DitherAfterExposures", 0);
-                        SetProp(se, "ImageType",            "DARK");
-                        var darkFilter = profileService.ActiveProfile.FilterWheelSettings.FilterWheelFilters
-                            .Cast<object>()
-                            .FirstOrDefault(f => "Dark".Equals(
-                                f.GetType().GetProperty("Name")?.GetValue(f)?.ToString(),
-                                StringComparison.OrdinalIgnoreCase));
-                        if (darkFilter != null)
-                            SetProp(se, "Filter", darkFilter);
-                        se.AttachNewParent(this);
-                        Add(se);
-                    }
-                }
+        // MEF satisfies this after construction, breaking the ISequenceItem circular dependency.
+        // The setter seeds SmartExposure into the template; Clone() copies it to each dropped instance.
+        [ImportMany(typeof(ISequenceItem))]
+        public IEnumerable<ISequenceItem> SequenceItemPrototypes {
+            set {
+                if (!_plugin.Settings.SeedSmartExposure) return;
+                var proto = value?.FirstOrDefault(i => i.GetType().Name == "SmartExposure");
+                if (proto == null) return;
+                var se = proto.Clone() as ISequenceItem;
+                if (se == null) return;
+                SetProp(se, "ExposureTime",         TargetExposure);
+                SetProp(se, "MinExposure",          TargetExposure);
+                SetProp(se, "MaxExposure",          TargetExposure);
+                SetProp(se, "Gain",                 Gain);
+                SetProp(se, "ExposureCount",        20);
+                SetProp(se, "DitherAfterExposures", 0);
+                SetProp(se, "ImageType",            "DARK");
+                var darkFilter = _profileService.ActiveProfile.FilterWheelSettings.FilterWheelFilters
+                    .Cast<object>()
+                    .FirstOrDefault(f => "Dark".Equals(
+                        f.GetType().GetProperty("Name")?.GetValue(f)?.ToString(),
+                        StringComparison.OrdinalIgnoreCase));
+                if (darkFilter != null)
+                    SetProp(se, "Filter", darkFilter);
+                se.AttachNewParent(this);
+                Add(se);
             }
         }
 
