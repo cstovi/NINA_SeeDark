@@ -25,10 +25,13 @@ namespace NINA.Plugin.SeeDark {
             CameraMediator = cameraMediator;
             Settings = SeeDarkSettings.Load();
 
-            DarkLibraryCsvPath = Settings.DarkLibraryCsvPath;
-            TargetExposure = Settings.TargetExposure;
-            MaxAgeDays = Settings.MaxAgeDays;
-            AlpacaPort = Settings.AlpacaPort;
+            DarkLibraryCsvPath    = Settings.DarkLibraryCsvPath;
+            TargetExposure        = Settings.TargetExposure;
+            MaxAgeDays            = Settings.MaxAgeDays;
+            Gain                  = Settings.Gain;
+            RawDarksFolder        = Settings.RawDarksFolder;
+            MasterLibraryFolder   = Settings.MasterLibraryFolder;
+            MinFrameCount         = Settings.MinFrameCount;
 
             SaveSettingsCommand = new RelayCommand(_ => ApplyAndSave());
         }
@@ -36,11 +39,26 @@ namespace NINA.Plugin.SeeDark {
         public ICommand SaveSettingsCommand { get; }
 
         private void ApplyAndSave() {
-            Settings.DarkLibraryCsvPath = DarkLibraryCsvPath;
-            Settings.TargetExposure = TargetExposure;
-            Settings.MaxAgeDays = MaxAgeDays;
-            Settings.AlpacaPort = AlpacaPort;
+            Settings.DarkLibraryCsvPath  = DarkLibraryCsvPath;
+            Settings.TargetExposure      = TargetExposure;
+            Settings.MaxAgeDays          = MaxAgeDays;
+            Settings.Gain                = Gain;
+            Settings.RawDarksFolder      = RawDarksFolder;
+            Settings.MasterLibraryFolder = MasterLibraryFolder;
+            Settings.MinFrameCount       = MinFrameCount;
             Settings.Save();
+        }
+
+        // Returns the scope ID token from the camera driver name (second whitespace token).
+        // Matches the INSTRUME FITS header value written by NINA.
+        // Returns "" if the camera is not connected.
+        public string GetScopeId() {
+            try {
+                var info = CameraMediator.GetInfo();
+                if (info == null || !info.Connected) return "";
+                var parts = info.Name.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+                return parts.Length >= 2 ? parts[1] : info.Name;
+            } catch { return ""; }
         }
 
         private string _darkLibraryCsvPath = "";
@@ -61,10 +79,28 @@ namespace NINA.Plugin.SeeDark {
             set { _maxAgeDays = value; RaisePropertyChanged(); }
         }
 
-        private int _alpacaPort = 32323;
-        public int AlpacaPort {
-            get => _alpacaPort;
-            set { _alpacaPort = value; RaisePropertyChanged(); }
+        private int _gain = 200;
+        public int Gain {
+            get => _gain;
+            set { _gain = value; RaisePropertyChanged(); }
+        }
+
+        private string _rawDarksFolder = "";
+        public string RawDarksFolder {
+            get => _rawDarksFolder;
+            set { _rawDarksFolder = value; RaisePropertyChanged(); }
+        }
+
+        private string _masterLibraryFolder = "";
+        public string MasterLibraryFolder {
+            get => _masterLibraryFolder;
+            set { _masterLibraryFolder = value; RaisePropertyChanged(); }
+        }
+
+        private int _minFrameCount = 20;
+        public int MinFrameCount {
+            get => _minFrameCount;
+            set { _minFrameCount = value; RaisePropertyChanged(); }
         }
     }
 }

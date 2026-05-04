@@ -3,8 +3,6 @@ using System.ComponentModel.Composition;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using NINA.Core.Model;
@@ -22,7 +20,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
     public class SeeDarkContainer : SequenceContainer {
 
         private readonly SeeDarkPlugin _plugin;
-        private static readonly HttpClient _http = new();
+        private readonly string _logFilePath;
 
         private string? _cachedCsvPath;
         private DateTime _csvLastWrite = DateTime.MinValue;
@@ -34,35 +32,55 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             Name = "SeeDark";
             if (System.Windows.Application.Current?.Resources["SeeDark_Icon"] is System.Windows.Media.GeometryGroup icon)
                 Icon = icon;
+            _logFilePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "NINA", "SeeDark", $"seedark_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
+            Log("SeeDark initialised");
         }
 
         private SeeDarkContainer(SeeDarkContainer cloneMe) : base(new SequentialStrategy()) {
             _plugin = cloneMe._plugin;
+            _logFilePath = cloneMe._logFilePath;
             Name = "SeeDark";
         }
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token) {
-            if (await NeedsDarks(token))
+            if (NeedsDarks())
                 await base.Execute(progress, token);
         }
 
-        private async Task<bool> NeedsDarks(CancellationToken token) {
+        private bool NeedsDarks() {
             double temp = GetSensorTempFromMediator();
-            if (double.IsNaN(temp))
-                temp = await GetTempViaAlpaca(token);
-            if (double.IsNaN(temp))
-                return true; // can't read temp → take darks to be safe
+            if (double.IsNaN(temp)) {
+                Log("Camera temperature unavailable — taking darks to be safe");
+                return true;
+            }
+
+            var scopeId = _plugin.GetScopeId();
+            if (string.IsNullOrEmpty(scopeId)) {
+                Log("Scope ID unavailable (camera not connected) — taking darks to be safe");
+                return true;
+            }
 
             int bucket = (int)(Math.Round(temp / 2.0) * 2);
+            Log($"Sensor temp {temp:F1}°C → bucket {bucket}°C, gain {_plugin.Settings.Gain}, scope {scopeId}, target exposure {_plugin.Settings.TargetExposure}s");
+
             var rows = LoadCsv();
-            if (rows == null)
-                return true; // no CSV or not configured → take darks
+            if (rows == null) {
+                Log("CSV not configured or unreadable — taking darks");
+                return true;
+            }
 
             var cutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
-            return !rows.Any(r =>
+            bool needsDarks = !rows.Any(r =>
                 r.Temp == bucket &&
                 Math.Abs(r.Exposure - _plugin.Settings.TargetExposure) < 0.5 &&
+                r.Gain == _plugin.Settings.Gain &&
+                r.Scope == scopeId &&
                 r.DateCreated >= cutoff);
+
+            Log(needsDarks ? "No matching dark found — taking darks" : "Matching dark exists — skipping");
+            return needsDarks;
         }
 
         private double GetSensorTempFromMediator() {
@@ -70,17 +88,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 var info = _plugin.CameraMediator.GetInfo();
                 if (info != null && info.Connected && !double.IsNaN(info.Temperature))
                     return info.Temperature;
-            } catch { }
-            return double.NaN;
-        }
-
-        private async Task<double> GetTempViaAlpaca(CancellationToken token) {
-            try {
-                var url = $"http://localhost:{_plugin.Settings.AlpacaPort}/api/v1/camera/0/ccdtemperature";
-                var response = await _http.GetStringAsync(url, token);
-                using var doc = JsonDocument.Parse(response);
-                if (doc.RootElement.TryGetProperty("Value", out var val))
-                    return val.GetDouble();
             } catch { }
             return double.NaN;
         }
@@ -101,17 +108,34 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     .ToArray()!;
                 _cachedCsvPath = path;
                 _csvLastWrite = lastWrite;
+                Log($"CSV loaded: {_csvCache.Length} rows from {path}");
                 return _csvCache;
             } catch { return null; }
+        }
+
+        private void Log(string message) {
+            WriteToLog($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
+        }
+
+        private void WriteToLog(string line) {
+            try {
+                Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
+                File.AppendAllText(_logFilePath, line + Environment.NewLine);
+            } catch { }
         }
 
         private static CsvRow? ParseRow(string line) {
             try {
                 var parts = line.Split(',');
                 if (parts.Length < 6) return null;
+                var gainStr = parts[2].Trim();
+                int gain = string.IsNullOrEmpty(gainStr)
+                    ? 0 : (int)double.Parse(gainStr, CultureInfo.InvariantCulture);
                 return new CsvRow(
                     (int)double.Parse(parts[0].Trim(), CultureInfo.InvariantCulture),
                     double.Parse(parts[1].Trim(), CultureInfo.InvariantCulture),
+                    gain,
+                    parts[4].Trim(),
                     DateTime.Parse(parts[5].Trim(), CultureInfo.InvariantCulture));
             } catch { return null; }
         }
@@ -127,6 +151,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             return clone;
         }
 
-        private record CsvRow(int Temp, double Exposure, DateTime DateCreated);
+        private record CsvRow(int Temp, double Exposure, int Gain, string Scope, DateTime DateCreated);
     }
 }

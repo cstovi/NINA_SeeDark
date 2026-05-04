@@ -8,7 +8,10 @@ namespace NINA.Plugin.SeeDark {
         public string DarkLibraryCsvPath { get; set; } = "";
         public double TargetExposure { get; set; } = 20.0;
         public int MaxAgeDays { get; set; } = 180;
-        public int AlpacaPort { get; set; } = 32323;
+        public int Gain { get; set; } = 200;
+        public string RawDarksFolder { get; set; } = "";
+        public string MasterLibraryFolder { get; set; } = "";
+        public int MinFrameCount { get; set; } = 20;
 
         private static string SettingsPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
