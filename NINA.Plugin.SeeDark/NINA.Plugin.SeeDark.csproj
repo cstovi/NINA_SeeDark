@@ -15,4 +15,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
+  <Target Name="CopyToNina" AfterTargets="Build">
+    <Copy SourceFiles="$(OutputPath)NINA.Plugin.SeeDark.dll"
+          DestinationFolder="$(LOCALAPPDATA)\NINA\Plugins\3.0.0\SeeDark"
+          SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
