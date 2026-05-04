@@ -15,8 +15,8 @@ using NINA.Sequencer.SequenceItem;
 namespace NINA.Plugin.SeeDark.Sequencer {
 
     [Export(typeof(ISequenceItem))]
-    [ExportMetadata("Name", "Stack Master Darks")]
-    [ExportMetadata("Description", "Median-stacks raw dark frames into master darks and updates DarkLibrary.csv")]
+    [ExportMetadata("Name", "Stack SeeDark Master Darks")]
+    [ExportMetadata("Description", "Median-stacks raw dark frames into master darks")]
     [ExportMetadata("Icon", "SeeDark_Icon")]
     [ExportMetadata("Category", "SeeDark")]
     public class StackMasterDarksInstruction : SequenceItem {
@@ -27,7 +27,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         [ImportingConstructor]
         public StackMasterDarksInstruction(SeeDarkPlugin plugin) {
             _plugin = plugin;
-            Name = "Stack Master Darks";
+            Name = "Stack SeeDark Master Darks";
             if (System.Windows.Application.Current?.Resources["SeeDark_Icon"] is GeometryGroup icon)
                 Icon = icon;
             _logFilePath = Path.Combine(
@@ -38,7 +38,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         private StackMasterDarksInstruction(StackMasterDarksInstruction cloneMe) {
             _plugin = cloneMe._plugin;
             _logFilePath = cloneMe._logFilePath;
-            Name = "Stack Master Darks";
+            Name = "Stack SeeDark Master Darks";
+            Icon = cloneMe.Icon;
         }
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token) {
@@ -47,24 +48,22 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
         public override object Clone() => new StackMasterDarksInstruction(this);
 
-        // ─── Orchestration ───────────────────────────────────────────────────────
-
         private void RunStack(CancellationToken token) {
             var rawFolder    = _plugin.Settings.RawDarksFolder;
             var masterFolder = _plugin.Settings.MasterLibraryFolder;
-            var csvPath      = _plugin.Settings.DarkLibraryCsvPath;
 
             if (string.IsNullOrWhiteSpace(rawFolder) || !Directory.Exists(rawFolder)) {
-                Log("Raw darks folder not configured or missing — aborting"); return;
+                Log("❌ Raw darks folder not configured or missing — aborting"); return;
             }
             if (string.IsNullOrWhiteSpace(masterFolder)) {
-                Log("Master library folder not configured — aborting"); return;
+                Log("❌ Master library folder not configured — aborting"); return;
             }
             Directory.CreateDirectory(masterFolder);
 
-            Log($"Scanning {rawFolder}");
+            Log($"🔭 Scanning {rawFolder}");
+            Log($"🔭 Masters → {masterFolder}");
             var allFiles = Directory.GetFiles(rawFolder, "*.fit*", SearchOption.AllDirectories);
-            Log($"Found {allFiles.Length} FITS file(s)");
+            Log($"🔭 Found {allFiles.Length} FITS file(s)");
 
             var frameInfos = new List<FrameInfo>();
             foreach (var path in allFiles) {
@@ -75,19 +74,25 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 frameInfos.Add(info);
             }
 
-            var groups = frameInfos
-                .GroupBy(f => (f.TempBucket, f.Exposure, f.Gain, f.ScopeId))
+            int stackBs = _plugin.Settings.StackTolerance;
+            var uniqueKeys = frameInfos
+                .Select(f => (f.TempBucket, f.Exposure, f.Gain, f.ScopeId))
+                .Distinct()
                 .ToList();
-            Log($"{frameInfos.Count} DARK frame(s) across {groups.Count} group(s)");
+            Log($"🔭 {frameInfos.Count} DARK frame(s) across {uniqueKeys.Count} bucket key(s)");
 
-            foreach (var group in groups) {
+            foreach (var key in uniqueKeys) {
                 token.ThrowIfCancellationRequested();
-                var key    = group.Key;
-                var frames = group.ToList();
-                Log($"Group {key.TempBucket}°C / {key.Exposure:F0}s / gain {key.Gain} / {key.ScopeId}: {frames.Count} frame(s)");
+                var frames = frameInfos
+                    .Where(f => Math.Abs(f.TempBucket - key.TempBucket) <= stackBs &&
+                                Math.Abs(f.Exposure - key.Exposure) < 0.5 &&
+                                f.Gain == key.Gain &&
+                                f.ScopeId == key.ScopeId)
+                    .ToList();
+                Log($"🔭 Group {key.TempBucket}°C ±{stackBs}°C / {key.Exposure:F0}s / gain {key.Gain} / {key.ScopeId}: {frames.Count} frame(s) (window {key.TempBucket - stackBs}–{key.TempBucket + stackBs}°C)");
 
                 if (frames.Count < _plugin.Settings.MinFrameCount) {
-                    Log($"  Skipped — need {_plugin.Settings.MinFrameCount}, have {frames.Count}");
+                    Log($"⏭️ Skipped — need {_plugin.Settings.MinFrameCount}, have {frames.Count}");
                     continue;
                 }
 
@@ -96,18 +101,18 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 foreach (var frame in frames) {
                     token.ThrowIfCancellationRequested();
                     var pixels = LoadPixels(frame.Path, out int w, out int h);
-                    if (pixels == null) { Log($"  Skipped unreadable frame: {frame.Path}"); continue; }
+                    if (pixels == null) { Log($"⚠️ Skipped unreadable frame: {frame.Path}"); continue; }
                     if (width == 0) { width = w; height = h; }
-                    else if (w != width || h != height) { Log($"  Skipped mismatched frame: {frame.Path}"); continue; }
+                    else if (w != width || h != height) { Log($"⚠️ Skipped mismatched frame: {frame.Path}"); continue; }
                     pixelArrays.Add(pixels);
                 }
 
                 if (pixelArrays.Count < _plugin.Settings.MinFrameCount) {
-                    Log($"  Only {pixelArrays.Count} frame(s) loaded — skipping group");
+                    Log($"⏭️ Only {pixelArrays.Count} frame(s) loaded — skipping group");
                     continue;
                 }
 
-                Log($"  Stacking {pixelArrays.Count} frames ({width}×{height})...");
+                Log($"🔧 Stacking {pixelArrays.Count} frames ({width}×{height})...");
                 var median = ComputeMedian(pixelArrays);
 
                 var prefix = $"master_dark_{key.Exposure:F0}s_{key.TempBucket}c_{key.ScopeId}_";
@@ -131,22 +136,18 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 var sirilPath    = Path.Combine(masterFolder, $"{prefix}SIRIL_{ts}.fit");
                 var ninalivePath = Path.Combine(masterFolder, $"{prefix}NINALIVE_{ts}.fit");
                 WriteFitsFloat(sirilPath, median, width, height, extraHeaders);
-                Log($"  Written SIRIL: {Path.GetFileName(sirilPath)}");
+                Log($"💾 Written SIRIL: {Path.GetFileName(sirilPath)}");
                 WriteFitsUInt16(ninalivePath, median, width, height, extraHeaders);
-                Log($"  Written NINALIVE: {Path.GetFileName(ninalivePath)}");
+                Log($"💾 Written NINALIVE: {Path.GetFileName(ninalivePath)}");
             }
 
-            if (!string.IsNullOrWhiteSpace(csvPath))
-                RegenerateCsv(masterFolder, csvPath);
-
-            Log("Stack Master Darks complete");
+            Log("✅ Stack Master Darks complete");
         }
-
-        // ─── Frame header reading ─────────────────────────────────────────────
 
         private FrameInfo? ReadFrameInfo(string path) {
             try {
-                var h = ReadFitsHeader(path, out _, out _, out _, out _);
+                var h = FitsHeaderReader.ReadHeaders(path);
+                if (h == null) return null;
 
                 h.TryGetValue("FILTER",   out var filter);
                 h.TryGetValue("DATE-LOC", out var dateStr);
@@ -166,7 +167,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 double exposure = double.Parse(exptimeStr, CultureInfo.InvariantCulture);
                 double temp     = double.Parse(tempStr,    CultureInfo.InvariantCulture);
-                int    bucket   = (int)(Math.Round(temp / 2.0) * 2);
+                int    bs       = _plugin.Settings.TempBucketSize;
+                int    bucket   = (int)(Math.Floor(temp / bs) * bs);
                 var    parts    = instrume.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 string scopeId  = parts.Length >= 2 ? parts[1] : instrume;
                 int    gain     = int.TryParse(gainStr, out var g) ? g : 0;
@@ -175,14 +177,15 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             } catch { return null; }
         }
 
-        // ─── Pixel loading ────────────────────────────────────────────────────
-
         private static float[]? LoadPixels(string path, out int width, out int height) {
             width = 0; height = 0;
             try {
-                var h = ReadFitsHeader(path, out long dataOffset, out int bitpix, out int w, out int hi);
-                width = w; height = hi;
-                int count = w * hi;
+                var h = FitsHeaderReader.ReadHeaders(path, out long dataOffset);
+                if (h == null) return null;
+                int bitpix = h.TryGetValue("BITPIX", out var bp) ? int.Parse(bp) : 16;
+                width  = h.TryGetValue("NAXIS1", out var n1) ? int.Parse(n1) : 0;
+                height = h.TryGetValue("NAXIS2", out var n2) ? int.Parse(n2) : 0;
+                int count = width * height;
                 if (count == 0) return null;
 
                 double bzero  = h.TryGetValue("BZERO",  out var bz) ? double.Parse(bz,  CultureInfo.InvariantCulture) : 0.0;
@@ -211,8 +214,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             } catch { return null; }
         }
 
-        // ─── Median stacking ──────────────────────────────────────────────────
-
         private static float[] ComputeMedian(List<float[]> arrays) {
             int n   = arrays.Count;
             int len = arrays[0].Length;
@@ -227,8 +228,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
             return result;
         }
-
-        // ─── FITS writing ─────────────────────────────────────────────────────
 
         private static void WriteFitsFloat(string path, float[] pixels, int width, int height,
                                            Dictionary<string, object> extra) {
@@ -292,83 +291,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             if (dataRem > 0) fs.Write(new byte[2880 - dataRem]);
         }
 
-        // ─── CSV regeneration ─────────────────────────────────────────────────
-
-        private void RegenerateCsv(string masterFolder, string csvPath) {
-            var rows = new List<string> { "Temp,Exposure,Gain,Offset,Scope,DateCreated" };
-            var seen = new HashSet<string>();
-
-            foreach (var file in Directory.GetFiles(masterFolder, "*.fit*")) {
-                try {
-                    var h = ReadFitsHeader(file, out _, out _, out _, out _);
-                    if (!h.TryGetValue("IMAGETYP", out var typ) ||
-                        !string.Equals(typ, "DARK", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    h.TryGetValue("CCD-TEMP", out var tempStr);
-                    h.TryGetValue("EXPTIME",  out var expStr);
-                    h.TryGetValue("GAIN",     out var gainStr);
-                    h.TryGetValue("INSTRUME", out var instrume);
-                    h.TryGetValue("DATE-OBS", out var dateStr);
-                    if (string.IsNullOrEmpty(tempStr) || string.IsNullOrEmpty(expStr) || string.IsNullOrEmpty(instrume))
-                        continue;
-
-                    double temp   = double.Parse(tempStr, CultureInfo.InvariantCulture);
-                    int    bucket = (int)(Math.Round(temp / 2.0) * 2);
-                    double exp    = double.Parse(expStr, CultureInfo.InvariantCulture);
-                    var    parts  = instrume.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    string scopeId = parts.Length >= 2 ? parts[1] : instrume;
-                    string gain    = gainStr?.Trim() ?? "";
-                    var    date   = string.IsNullOrEmpty(dateStr)
-                        ? DateTime.Today : DateTime.Parse(dateStr, CultureInfo.InvariantCulture);
-
-                    if (!seen.Add($"{bucket}|{exp:F0}|{gain}|{scopeId}")) continue;
-                    rows.Add($"{bucket},{exp:F0},{gain},,{scopeId},{date:yyyy-MM-dd}");
-                } catch { }
-            }
-
-            File.WriteAllLines(csvPath, rows);
-            Log($"CSV regenerated: {rows.Count - 1} master(s) → {csvPath}");
-        }
-
-        // ─── FITS header reading ──────────────────────────────────────────────
-
-        private static Dictionary<string, string> ReadFitsHeader(string path,
-                out long dataOffset, out int bitpix, out int width, out int height) {
-            var h = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var buf = new byte[2880];
-            bool end = false;
-            long off = 0;
-            while (!end && fs.Read(buf, 0, 2880) == 2880) {
-                off += 2880;
-                for (int i = 0; i < 36 && !end; i++) {
-                    var kw = Encoding.ASCII.GetString(buf, i * 80, 8).TrimEnd();
-                    if (kw == "END") { end = true; break; }
-                    if (buf[i * 80 + 8] == (byte)'=') {
-                        var vc = Encoding.ASCII.GetString(buf, i * 80 + 10, 70);
-                        h[kw] = ParseFitsValue(vc);
-                    }
-                }
-            }
-            dataOffset = off;
-            bitpix = h.TryGetValue("BITPIX", out var bp) ? int.Parse(bp) : 16;
-            width  = h.TryGetValue("NAXIS1", out var n1) ? int.Parse(n1) : 0;
-            height = h.TryGetValue("NAXIS2", out var n2) ? int.Parse(n2) : 0;
-            return h;
-        }
-
-        private static string ParseFitsValue(string vc) {
-            var v = vc.TrimStart();
-            if (v.StartsWith("'")) {
-                int end = v.IndexOf('\'', 1);
-                return end < 0 ? v[1..].TrimEnd() : v[1..end].TrimEnd();
-            }
-            int slash = v.IndexOf('/');
-            return (slash < 0 ? v : v[..slash]).Trim();
-        }
-
-        // ─── FITS card builders ───────────────────────────────────────────────
-
         private static string FitsCardBool(string kw, bool val) {
             kw = kw.PadRight(8)[..8].ToUpper();
             return $"{kw}= {(val ? "T" : "F"),20}".PadRight(80)[..80];
@@ -393,16 +315,13 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             _        => FitsCardNum(kw, Convert.ToString(val, CultureInfo.InvariantCulture) ?? "")
         };
 
-        // ─── Logging ──────────────────────────────────────────────────────────
-
         private void Log(string msg) {
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
                 File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}{Environment.NewLine}");
             } catch { }
+            _ = _plugin.SendDiscordAsync(msg);
         }
-
-        // ─── Types ────────────────────────────────────────────────────────────
 
         private record FrameInfo(
             string Path, string Filter, DateTime SessionDate,

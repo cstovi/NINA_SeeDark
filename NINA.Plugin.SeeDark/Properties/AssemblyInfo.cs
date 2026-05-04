@@ -5,7 +5,11 @@ using System.Windows;
 [assembly: AssemblyTitle("SeeDark")]
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "3.0.0.1001")]
 [assembly: AssemblyMetadata("FeaturedImageURL", "https://i.ibb.co/NdXb8D39/seedark.png")]
-[assembly: AssemblyDescription("Conditionally takes master darks based on the dark library gap at the current sensor temperature")]
+[assembly: AssemblyDescription("Designed for Seestar. Checks whether a master dark is needed for the current sensor temperature, gain, and exposure — and runs your instructions to capture darks only if so. Optionally stacks raw darks into master files.")]
+[assembly: AssemblyMetadata("ShortDescription", "Captures dark frames only when needed for the current sensor temperature, gain, and exposure. Optionally stacks raw darks into master files.")]
+[assembly: AssemblyMetadata("LongDescription", @"Drop a SeeDark Dark Gap Check container anywhere in your sequence and add your dark-capture instructions inside it — e.g. a Smart Exposure taking darks with the dark filter. Set the exposure and gain on the container to match what you're imaging — the container will run its children only if no master dark exists for the current sensor temperature, gain, and exposure. For multiple filters or exposures, use one container per combination.
+
+When you've accumulated enough raw darks, optionally add a Stack SeeDark Master Darks instruction to median-stack them into master files automatically. Set the master library folder at the top, and configure the raw darks folder and minimum frame count in the Dark Stacker section above.")]
 [assembly: AssemblyCompany("Carl Stovell")]
 [assembly: AssemblyProduct("NINA.Plugin.SeeDark")]
 [assembly: AssemblyVersion("1.0.0.0")]

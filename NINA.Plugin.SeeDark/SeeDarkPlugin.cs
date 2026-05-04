@@ -1,11 +1,17 @@
+using System;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Input;
+using Newtonsoft.Json;
 using NINA.Core.Utility;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Plugin;
 using NINA.Plugin.Interfaces;
+using NINA.Profile.Interfaces;
 
 namespace NINA.Plugin.SeeDark {
 
@@ -21,17 +27,19 @@ namespace NINA.Plugin.SeeDark {
         public SeeDarkSettings Settings { get; }
 
         [ImportingConstructor]
-        public SeeDarkPlugin(ICameraMediator cameraMediator) {
+        public SeeDarkPlugin(ICameraMediator cameraMediator, IProfileService profileService) {
             CameraMediator = cameraMediator;
-            Settings = SeeDarkSettings.Load();
+            Settings = SeeDarkSettings.Load(profileService.ActiveProfile.ImageFileSettings.FilePath);
 
-            DarkLibraryCsvPath    = Settings.DarkLibraryCsvPath;
             TargetExposure        = Settings.TargetExposure;
             MaxAgeDays            = Settings.MaxAgeDays;
             Gain                  = Settings.Gain;
             RawDarksFolder        = Settings.RawDarksFolder;
             MasterLibraryFolder   = Settings.MasterLibraryFolder;
             MinFrameCount         = Settings.MinFrameCount;
+            DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
+            TempBucketSize        = Settings.TempBucketSize;
+            StackTolerance        = Settings.StackTolerance;
 
             SaveSettingsCommand = new RelayCommand(_ => ApplyAndSave());
         }
@@ -39,14 +47,28 @@ namespace NINA.Plugin.SeeDark {
         public ICommand SaveSettingsCommand { get; }
 
         private void ApplyAndSave() {
-            Settings.DarkLibraryCsvPath  = DarkLibraryCsvPath;
             Settings.TargetExposure      = TargetExposure;
             Settings.MaxAgeDays          = MaxAgeDays;
             Settings.Gain                = Gain;
             Settings.RawDarksFolder      = RawDarksFolder;
             Settings.MasterLibraryFolder = MasterLibraryFolder;
             Settings.MinFrameCount       = MinFrameCount;
+            Settings.DiscordWebhookUrl   = DiscordWebhookUrl;
+            Settings.TempBucketSize      = TempBucketSize;
+            Settings.StackTolerance      = StackTolerance;
             Settings.Save();
+        }
+
+        public async Task SendDiscordAsync(string msg) {
+            var url = DiscordWebhookUrl;
+            if (string.IsNullOrWhiteSpace(url)) return;
+            try {
+                using var http = new HttpClient();
+                await http.PostAsync(url,
+                    new StringContent(
+                        $"{{\"content\":{JsonConvert.ToString(msg)}}}",
+                        Encoding.UTF8, "application/json"));
+            } catch { }
         }
 
         // Returns the scope ID token from the camera driver name (second whitespace token).
@@ -59,12 +81,6 @@ namespace NINA.Plugin.SeeDark {
                 var parts = info.Name.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
                 return parts.Length >= 2 ? parts[1] : info.Name;
             } catch { return ""; }
-        }
-
-        private string _darkLibraryCsvPath = "";
-        public string DarkLibraryCsvPath {
-            get => _darkLibraryCsvPath;
-            set { _darkLibraryCsvPath = value; RaisePropertyChanged(); }
         }
 
         private double _targetExposure = 20.0;
@@ -101,6 +117,24 @@ namespace NINA.Plugin.SeeDark {
         public int MinFrameCount {
             get => _minFrameCount;
             set { _minFrameCount = value; RaisePropertyChanged(); }
+        }
+
+        private string _discordWebhookUrl = "";
+        public string DiscordWebhookUrl {
+            get => _discordWebhookUrl;
+            set { _discordWebhookUrl = value; RaisePropertyChanged(); }
+        }
+
+        private int _tempBucketSize = 2;
+        public int TempBucketSize {
+            get => _tempBucketSize;
+            set { _tempBucketSize = value; RaisePropertyChanged(); }
+        }
+
+        private int _stackTolerance = 2;
+        public int StackTolerance {
+            get => _stackTolerance;
+            set { _stackTolerance = value; RaisePropertyChanged(); }
         }
     }
 }
