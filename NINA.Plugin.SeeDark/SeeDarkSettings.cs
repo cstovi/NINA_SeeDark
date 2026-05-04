@@ -6,9 +6,9 @@ namespace NINA.Plugin.SeeDark {
 
     public class SeeDarkSettings {
         public string DarkLibraryCsvPath { get; set; } = "";
-        public double TargetExposure { get; set; } = 60.0;
+        public double TargetExposure { get; set; } = 20.0;
         public int MaxAgeDays { get; set; } = 180;
-        public int AlpacaPort { get; set; } = 11111;
+        public int AlpacaPort { get; set; } = 32323;
 
         private static string SettingsPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

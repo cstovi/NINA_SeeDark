@@ -45,7 +45,7 @@
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Target exposure (s):" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="e.g. 60" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="e.g. 20" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Max master age (days):" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MaxAgeDays, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
@@ -53,7 +53,7 @@
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Alpaca port (fallback):" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding AlpacaPort, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="default 11111" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="default 32323" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
             </Grid>
 
             <Button Content="Save Settings" Command="{Binding SaveSettingsCommand}" HorizontalAlignment="Left" Padding="12,4" Margin="0,12,0,0"/>

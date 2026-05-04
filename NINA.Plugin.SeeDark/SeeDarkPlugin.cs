@@ -49,7 +49,7 @@ namespace NINA.Plugin.SeeDark {
             set { _darkLibraryCsvPath = value; RaisePropertyChanged(); }
         }
 
-        private double _targetExposure = 60.0;
+        private double _targetExposure = 20.0;
         public double TargetExposure {
             get => _targetExposure;
             set { _targetExposure = value; RaisePropertyChanged(); }
@@ -61,7 +61,7 @@ namespace NINA.Plugin.SeeDark {
             set { _maxAgeDays = value; RaisePropertyChanged(); }
         }
 
-        private int _alpacaPort = 11111;
+        private int _alpacaPort = 32323;
         public int AlpacaPort {
             get => _alpacaPort;
             set { _alpacaPort = value; RaisePropertyChanged(); }
