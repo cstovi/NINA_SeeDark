@@ -13,18 +13,7 @@
 
     <!-- SeeDarkContainer DataTemplate — DataType only, NO x:Key (implicit lookup by type) -->
     <DataTemplate DataType="{x:Type seq:SeeDarkContainer}">
-        <nina:SequenceContainerView>
-            <nina:SequenceContainerView.SequenceContainerContent>
-                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                    <TextBlock Text="Exposure (s):" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <TextBox Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged, FallbackValue=20, TargetNullValue=20}"
-                             Width="50" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                    <TextBlock Text="Gain:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <TextBox Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged, FallbackValue=200, TargetNullValue=200}"
-                             Width="50" VerticalAlignment="Center"/>
-                </StackPanel>
-            </nina:SequenceContainerView.SequenceContainerContent>
-        </nina:SequenceContainerView>
+        <nina:SequenceContainerView/>
     </DataTemplate>
 
     <!-- StackMasterDarksInstruction DataTemplate -->
@@ -34,19 +23,19 @@
 
     <!-- Plugin options UI — key must match AssemblyTitle + "_Options" -->
     <DataTemplate x:Key="SeeDark_Options" DataType="{x:Type local:SeeDarkPlugin}">
-        <StackPanel Margin="8">
+        <StackPanel Margin="8" MaxWidth="520">
 
-            <TextBlock Text="Library" FontWeight="Bold" Margin="0,0,0,6"/>
-            <Grid Margin="0,0,0,4">
+            <TextBlock Text="Dark Library" FontWeight="Bold" Margin="0,0,0,6"/>
+            <Grid Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="180"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Master library folder:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBox Grid.Column="1" Text="{Binding MasterLibraryFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="0" Text="DarkLibrary.csv path:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox Grid.Column="1" Text="{Binding DarkLibraryCsvPath, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
             </Grid>
 
-            <TextBlock Text="Dark Matching" FontWeight="Bold" Margin="0,16,0,6"/>
+            <TextBlock Text="Dark Matching" FontWeight="Bold" Margin="0,0,0,6"/>
             <Grid Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="180"/>
@@ -57,54 +46,19 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Default exposure (s):" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Target exposure (s):" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="seeds new containers" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="e.g. 20" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Default gain:" VerticalAlignment="Center" Margin="0,0,8,4"/>
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="seeds new containers (S30 = 200)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Max master age (days):" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MaxAgeDays, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="default 180 (6 months)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Temp bucket size (°C):" VerticalAlignment="Center" Margin="0,0,8,4"/>
-                <ComboBox Grid.Row="2" Grid.Column="1" SelectedValue="{Binding TempBucketSize}"
-                          SelectedValuePath="Content" VerticalAlignment="Center" Margin="0,0,0,4">
-                    <ComboBoxItem Content="1"/>
-                    <ComboBoxItem Content="2"/>
-                    <ComboBoxItem Content="4"/>
-                </ComboBox>
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="bucket spacing (2 = masters at 20, 22, 24…°C)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
-
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Stack/match tolerance (°C):" VerticalAlignment="Center" Margin="0,0,8,4"/>
-                <ComboBox Grid.Row="3" Grid.Column="1" SelectedValue="{Binding StackTolerance}"
-                          SelectedValuePath="Content" VerticalAlignment="Center" Margin="0,0,0,4">
-                    <ComboBoxItem Content="1"/>
-                    <ComboBoxItem Content="2"/>
-                    <ComboBoxItem Content="3"/>
-                </ComboBox>
-                <TextBlock Grid.Row="3" Grid.Column="2" Text="±°C stacking window and runtime match tolerance" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
-
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Max master age (days):" VerticalAlignment="Center" Margin="0,0,8,4"/>
-                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding MaxAgeDays, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Grid.Row="4" Grid.Column="2" Text="default 180 (6 months)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
-
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="Seed Smart Exposure:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <CheckBox  Grid.Row="5" Grid.Column="1" IsChecked="{Binding SeedSmartExposure}" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="5" Grid.Column="2" Text="add Smart Exposure to new containers automatically" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
-            </Grid>
-
-            <TextBlock Text="Notifications" FontWeight="Bold" Margin="0,16,0,6"/>
-            <Grid Margin="0,0,0,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="180"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Discord webhook URL:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBox Grid.Column="1" Text="{Binding DiscordWebhookUrl, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Gain:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="default 200 (Seestar S30)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
             </Grid>
 
             <Button Content="Save Settings" Command="{Binding SaveSettingsCommand}" HorizontalAlignment="Left" Padding="12,4" Margin="0,12,0,0"/>
@@ -118,13 +72,17 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Raw darks folder:" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding RawDarksFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Min frames to stack:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MinFrameCount, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Master library folder:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MasterLibraryFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Min frames to stack:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding MinFrameCount, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
             </Grid>
 
         </StackPanel>

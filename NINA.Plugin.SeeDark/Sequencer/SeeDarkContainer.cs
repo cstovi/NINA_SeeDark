@@ -1,106 +1,47 @@
 using System;
-using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.ComponentModel.Composition;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using NINA.Core.Model;
-using NINA.Profile.Interfaces;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Container.ExecutionStrategy;
 using NINA.Sequencer.SequenceItem;
 
 namespace NINA.Plugin.SeeDark.Sequencer {
 
-    [Export(typeof(ISequenceItem))]
     [Export(typeof(ISequenceContainer))]
-    [ExportMetadata("Name", "SeeDark Dark Gap Check")]
-    [ExportMetadata("Description", "Runs child instructions only when no matching master dark exists for the current sensor temperature, gain, and exposure")]
+    [ExportMetadata("Name", "SeeDark")]
+    [ExportMetadata("Description", "Takes master darks only when the dark library has a gap at the current sensor temperature")]
     [ExportMetadata("Icon", "SeeDark_Icon")]
     [ExportMetadata("Category", "SeeDark")]
     public class SeeDarkContainer : SequenceContainer {
 
         private readonly SeeDarkPlugin _plugin;
-        private readonly IProfileService _profileService;
         private readonly string _logFilePath;
 
-        private double _targetExposure = 20.0;
-        [JsonProperty]
-        public double TargetExposure {
-            get => _targetExposure;
-            set { _targetExposure = value; RaisePropertyChanged(); }
-        }
-
-        private int _gain = 200;
-        [JsonProperty]
-        public int Gain {
-            get => _gain;
-            set { _gain = value; RaisePropertyChanged(); }
-        }
+        private string? _cachedCsvPath;
+        private DateTime _csvLastWrite = DateTime.MinValue;
+        private CsvRow[]? _csvCache;
 
         [ImportingConstructor]
-        public SeeDarkContainer(SeeDarkPlugin plugin, IProfileService profileService)
-            : base(new SequentialStrategy()) {
+        public SeeDarkContainer(SeeDarkPlugin plugin) : base(new SequentialStrategy()) {
             _plugin = plugin;
-            _profileService = profileService;
-            TargetExposure = plugin.Settings.TargetExposure;
-            Gain           = plugin.Settings.Gain;
-            Name = "SeeDark Dark Gap Check";
+            Name = "SeeDark";
             if (System.Windows.Application.Current?.Resources["SeeDark_Icon"] is System.Windows.Media.GeometryGroup icon)
                 Icon = icon;
             _logFilePath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "NINA", "SeeDark", $"seedark_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.log");
-        }
-
-        // MEF satisfies this after construction, breaking the ISequenceItem circular dependency.
-        // The setter seeds SmartExposure into the template; Clone() copies it to each dropped instance.
-        [ImportMany(typeof(ISequenceItem))]
-        public IEnumerable<ISequenceItem> SequenceItemPrototypes {
-            set {
-                if (!_plugin.Settings.SeedSmartExposure) return;
-                var proto = value?.FirstOrDefault(i => i.GetType().Name == "SmartExposure");
-                if (proto == null) return;
-                var se = proto.Clone() as ISequenceItem;
-                if (se == null) return;
-                SetProp(se, "ExposureTime",         TargetExposure);
-                SetProp(se, "MinExposure",          TargetExposure);
-                SetProp(se, "MaxExposure",          TargetExposure);
-                SetProp(se, "Gain",                 Gain);
-                SetProp(se, "ExposureCount",        20);
-                SetProp(se, "DitherAfterExposures", 0);
-                SetProp(se, "ImageType",            "DARK");
-                var darkFilter = _profileService.ActiveProfile.FilterWheelSettings.FilterWheelFilters
-                    .Cast<object>()
-                    .FirstOrDefault(f => "Dark".Equals(
-                        f.GetType().GetProperty("Name")?.GetValue(f)?.ToString(),
-                        StringComparison.OrdinalIgnoreCase));
-                if (darkFilter != null)
-                    SetProp(se, "Filter", darkFilter);
-                se.AttachNewParent(this);
-                Add(se);
-            }
-        }
-
-        private static void SetProp(object obj, string name, object val) {
-            try { obj.GetType().GetProperty(name)?.SetValue(obj, val); } catch { }
+            Log("SeeDark initialised");
         }
 
         private SeeDarkContainer(SeeDarkContainer cloneMe) : base(new SequentialStrategy()) {
             _plugin = cloneMe._plugin;
             _logFilePath = cloneMe._logFilePath;
-            TargetExposure = cloneMe.TargetExposure;
-            Gain           = cloneMe.Gain;
-            Name = "SeeDark Dark Gap Check";
-            Icon = cloneMe.Icon;
-        }
-
-        [System.Runtime.Serialization.OnDeserializing]
-        private void OnDeserializing(System.Runtime.Serialization.StreamingContext context) {
-            Items.Clear();
+            Name = "SeeDark";
         }
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token) {
@@ -111,42 +52,34 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         private bool NeedsDarks() {
             double temp = GetSensorTempFromMediator();
             if (double.IsNaN(temp)) {
-                Log("⚠️ Camera temperature unavailable — darks needed!");
+                Log("Camera temperature unavailable — taking darks to be safe");
                 return true;
             }
 
             var scopeId = _plugin.GetScopeId();
             if (string.IsNullOrEmpty(scopeId)) {
-                Log("⚠️ Scope ID unavailable (camera not connected) — darks needed!");
+                Log("Scope ID unavailable (camera not connected) — taking darks to be safe");
                 return true;
             }
 
-            int bs = _plugin.Settings.TempBucketSize;
-            int bucket = (int)(Math.Round(temp / bs) * bs);
-            Log($"🌡️ Sensor temp {temp:F1}°C → bucket {bucket}°C ({bs}°C steps), gain {Gain}, scope {scopeId}, target exposure {TargetExposure}s");
+            int bucket = (int)(Math.Round(temp / 2.0) * 2);
+            Log($"Sensor temp {temp:F1}°C → bucket {bucket}°C, gain {_plugin.Settings.Gain}, scope {scopeId}, target exposure {_plugin.Settings.TargetExposure}s");
 
-            var masters = ScanMasterFolder();
-            if (masters.Length == 0) {
-                Log("🌑 No masters found in master library folder — darks needed!");
+            var rows = LoadCsv();
+            if (rows == null) {
+                Log("CSV not configured or unreadable — taking darks");
                 return true;
             }
 
-            int tol = _plugin.Settings.StackTolerance;
             var cutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
-            bool needsDarks = !masters.Any(r =>
-                Math.Abs(r.Temp - temp) <= tol &&
-                Math.Abs(r.Exposure - TargetExposure) < 0.5 &&
-                r.Gain == Gain &&
+            bool needsDarks = !rows.Any(r =>
+                r.Temp == bucket &&
+                Math.Abs(r.Exposure - _plugin.Settings.TargetExposure) < 0.5 &&
+                r.Gain == _plugin.Settings.Gain &&
                 r.Scope == scopeId &&
                 r.DateCreated >= cutoff);
 
-            Log(needsDarks ? "🌑 No matching dark found — darks needed!" : "✅ Matching dark exists — skipping");
-
-            double warmThreshold = bucket + (tol - 2) * 0.5;
-            if (needsDarks && temp > warmThreshold) {
-                Log($"🌡️ Sensor at {temp:F1}°C already past entry point for {bucket}°C bucket ({warmThreshold:F1}°C) — skipping");
-                return false;
-            }
+            Log(needsDarks ? "No matching dark found — taking darks" : "Matching dark exists — skipping");
             return needsDarks;
         }
 
@@ -159,52 +92,52 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             return double.NaN;
         }
 
-        private MasterRecord[] ScanMasterFolder() {
-            var folder = _plugin.Settings.MasterLibraryFolder;
-            if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
-                return Array.Empty<MasterRecord>();
+        private CsvRow[]? LoadCsv() {
+            var path = _plugin.Settings.DarkLibraryCsvPath;
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                return null;
+            try {
+                var lastWrite = File.GetLastWriteTime(path);
+                if (_csvCache != null && path == _cachedCsvPath && lastWrite == _csvLastWrite)
+                    return _csvCache;
 
-            var results = new List<MasterRecord>();
-            foreach (var path in Directory.GetFiles(folder, "*.fit*")) {
-                var h = FitsHeaderReader.ReadHeaders(path);
-                if (h == null) { Log($"Skipped unreadable: {Path.GetFileName(path)}"); continue; }
-
-                if (!h.TryGetValue("IMAGETYP", out var imagetyp) ||
-                    imagetyp.IndexOf("DARK", StringComparison.OrdinalIgnoreCase) < 0) continue;
-
-                h.TryGetValue("CCD-TEMP", out var tempStr);
-                h.TryGetValue("EXPTIME",  out var expStr);
-                h.TryGetValue("GAIN",     out var gainStr);
-                h.TryGetValue("INSTRUME", out var instrume);
-                h.TryGetValue("DATE-OBS", out var dateStr);
-
-                if (string.IsNullOrEmpty(tempStr) || string.IsNullOrEmpty(expStr) || string.IsNullOrEmpty(instrume))
-                    continue;
-
-                try {
-                    double rawTemp    = double.Parse(tempStr, CultureInfo.InvariantCulture);
-                    int    masterTemp = (int)Math.Round(rawTemp);
-                    double exp        = double.Parse(expStr, CultureInfo.InvariantCulture);
-                    var    parts   = instrume.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    string scopeId = parts.Length >= 2 ? parts[1] : instrume;
-                    int    gain    = int.TryParse(gainStr, out var g) ? g : 0;
-                    var    date    = string.IsNullOrEmpty(dateStr)
-                        ? DateTime.MinValue
-                        : DateTime.Parse(dateStr, CultureInfo.InvariantCulture);
-                    results.Add(new MasterRecord(masterTemp, exp, gain, scopeId, date));
-                } catch { }
-            }
-
-            Log($"🔭 Scanned {results.Count} master dark(s) from {folder}");
-            return results.ToArray();
+                _csvCache = File.ReadAllLines(path)
+                    .Skip(1)
+                    .Select(ParseRow)
+                    .Where(r => r != null)
+                    .ToArray()!;
+                _cachedCsvPath = path;
+                _csvLastWrite = lastWrite;
+                Log($"CSV loaded: {_csvCache.Length} rows from {path}");
+                return _csvCache;
+            } catch { return null; }
         }
 
         private void Log(string message) {
+            WriteToLog($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
+        }
+
+        private void WriteToLog(string line) {
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
-                File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");
+                File.AppendAllText(_logFilePath, line + Environment.NewLine);
             } catch { }
-            _ = _plugin.SendDiscordAsync(message);
+        }
+
+        private static CsvRow? ParseRow(string line) {
+            try {
+                var parts = line.Split(',');
+                if (parts.Length < 6) return null;
+                var gainStr = parts[2].Trim();
+                int gain = string.IsNullOrEmpty(gainStr)
+                    ? 0 : (int)double.Parse(gainStr, CultureInfo.InvariantCulture);
+                return new CsvRow(
+                    (int)double.Parse(parts[0].Trim(), CultureInfo.InvariantCulture),
+                    double.Parse(parts[1].Trim(), CultureInfo.InvariantCulture),
+                    gain,
+                    parts[4].Trim(),
+                    DateTime.Parse(parts[5].Trim(), CultureInfo.InvariantCulture));
+            } catch { return null; }
         }
 
         public override object Clone() {
@@ -218,6 +151,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             return clone;
         }
 
-        private record MasterRecord(int Temp, double Exposure, int Gain, string Scope, DateTime DateCreated);
+        private record CsvRow(int Temp, double Exposure, int Gain, string Scope, DateTime DateCreated);
     }
 }
