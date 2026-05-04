@@ -4,6 +4,7 @@ using System.Windows;
 
 [assembly: AssemblyTitle("SeeDark")]
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "3.0.0.1001")]
+[assembly: AssemblyMetadata("FeaturedImageURL", "https://i.ibb.co/NdXb8D39/seedark.png")]
 [assembly: AssemblyDescription("Conditionally takes master darks based on the dark library gap at the current sensor temperature")]
 [assembly: AssemblyCompany("Carl Stovell")]
 [assembly: AssemblyProduct("NINA.Plugin.SeeDark")]
