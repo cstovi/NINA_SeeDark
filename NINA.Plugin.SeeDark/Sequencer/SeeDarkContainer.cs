@@ -81,31 +81,37 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             int bs = _plugin.Settings.TempBucketSize;
             int bucket = (int)(Math.Round(temp / bs) * bs);
-            Log($"🌡️ Sensor temp {temp:F1}°C → bucket {bucket}°C ({bs}°C steps), gain {Gain}, scope {scopeId}, target exposure {TargetExposure}s");
+            double lead = Math.Max(0.0, _plugin.Settings.PreBucketLeadC);
+            Log($"🌡️ Sensor temp {temp:F1}°C → bucket {bucket}°C ({bs}°C steps), gain {Gain}, scope {scopeId}, target exposure {TargetExposure}s, pre-bucket lead {lead:F1}°C");
 
             var masters = ScanMasterFolder();
-            if (masters.Length == 0) {
-                Log("🌑 No masters found in master library folder — darks needed!");
-                return true;
-            }
-
             int tol = _plugin.Settings.StackTolerance;
             var cutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
-            bool needsDarks = !masters.Any(r =>
-                Math.Abs(r.Temp - temp) <= tol &&
-                Math.Abs(r.Exposure - TargetExposure) < 0.5 &&
-                r.Gain == Gain &&
-                r.Scope == scopeId &&
-                r.DateCreated >= cutoff);
+            bool needsDarks;
+            if (masters.Length == 0) {
+                Log("🌑 No masters found in master library folder — darks needed!");
+                needsDarks = true;
+            } else {
+                needsDarks = !masters.Any(r =>
+                    Math.Abs(r.Temp - bucket) <= tol &&
+                    Math.Abs(r.Exposure - TargetExposure) < 0.5 &&
+                    r.Gain == Gain &&
+                    r.Scope == scopeId &&
+                    r.DateCreated >= cutoff);
+                Log(needsDarks ? "🌑 No matching dark found — darks needed!" : "✅ Matching dark exists — skipping");
+            }
+            if (!needsDarks) return false;
 
-            Log(needsDarks ? "🌑 No matching dark found — darks needed!" : "✅ Matching dark exists — skipping");
-
-            double warmThreshold = bucket + (tol - 2) * 0.5;
-            if (needsDarks && temp > warmThreshold) {
-                Log($"🌡️ Sensor at {temp:F1}°C already past entry point for {bucket}°C bucket ({warmThreshold:F1}°C) — skipping");
+            double startThreshold = bucket - lead;
+            double endThreshold = bucket + tol;
+            bool inWindow = temp >= startThreshold && temp <= endThreshold;
+            if (!inWindow) {
+                Log($"⏳ Missing dark for {bucket}°C bucket, but sensor {temp:F1}°C outside start window {startThreshold:F1}..{endThreshold:F1}°C — waiting");
                 return false;
             }
-            return needsDarks;
+
+            Log($"🌑 Missing dark for {bucket}°C bucket and sensor {temp:F1}°C is inside start window {startThreshold:F1}..{endThreshold:F1}°C — darks needed!");
+            return true;
         }
 
         private double GetSensorTempFromMediator() {

@@ -40,6 +40,7 @@ namespace NINA.Plugin.SeeDark {
             DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
             TempBucketSize        = Settings.TempBucketSize;
             StackTolerance        = Settings.StackTolerance;
+            PreBucketLeadC        = Settings.PreBucketLeadC;
 
             SaveSettingsCommand = new RelayCommand(_ => ApplyAndSave());
         }
@@ -56,6 +57,7 @@ namespace NINA.Plugin.SeeDark {
             Settings.DiscordWebhookUrl   = DiscordWebhookUrl;
             Settings.TempBucketSize      = TempBucketSize;
             Settings.StackTolerance      = StackTolerance;
+            Settings.PreBucketLeadC      = PreBucketLeadC;
             Settings.Save();
         }
 
@@ -135,6 +137,12 @@ namespace NINA.Plugin.SeeDark {
         public int StackTolerance {
             get => _stackTolerance;
             set { _stackTolerance = value; RaisePropertyChanged(); }
+        }
+
+        private double _preBucketLeadC = 0.5;
+        public double PreBucketLeadC {
+            get => _preBucketLeadC;
+            set { _preBucketLeadC = value; RaisePropertyChanged(); }
         }
     }
 }
