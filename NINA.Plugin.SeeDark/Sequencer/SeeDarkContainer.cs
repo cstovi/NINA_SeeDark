@@ -13,6 +13,10 @@ using NINA.Sequencer.Container.ExecutionStrategy;
 using NINA.Sequencer.SequenceItem;
 
 namespace NINA.Plugin.SeeDark.Sequencer {
+    public enum DarkExecutionMode {
+        Manual = 0,
+        Auto = 1
+    }
 
     [Export(typeof(ISequenceItem))]
     [Export(typeof(ISequenceContainer))]
@@ -39,11 +43,19 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             set { _gain = value; RaisePropertyChanged(); }
         }
 
+        private DarkExecutionMode _executionMode = DarkExecutionMode.Manual;
+        [JsonProperty]
+        public DarkExecutionMode ExecutionMode {
+            get => _executionMode;
+            set { _executionMode = value; RaisePropertyChanged(); }
+        }
+
         [ImportingConstructor]
         public SeeDarkContainer(SeeDarkPlugin plugin) : base(new SequentialStrategy()) {
             _plugin = plugin;
             TargetExposure = plugin.Settings.TargetExposure;
             Gain           = plugin.Settings.Gain;
+            ExecutionMode  = DarkExecutionMode.Manual;
             Name = "SeeDark Dark Gap Check";
             if (System.Windows.Application.Current?.Resources["SeeDark_Icon"] is System.Windows.Media.GeometryGroup icon)
                 Icon = icon;
@@ -57,6 +69,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             _logFilePath = cloneMe._logFilePath;
             TargetExposure = cloneMe.TargetExposure;
             Gain           = cloneMe.Gain;
+            ExecutionMode  = cloneMe.ExecutionMode;
             Name = "SeeDark Dark Gap Check";
             Icon = cloneMe.Icon;
         }
@@ -68,6 +81,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
         private bool NeedsDarks() {
             double temp = GetSensorTempFromMediator();
+            Log($"⚙️ Execution mode: {ExecutionMode}");
             if (double.IsNaN(temp)) {
                 Log("⚠️ Camera temperature unavailable — darks needed!");
                 return true;

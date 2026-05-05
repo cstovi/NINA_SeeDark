@@ -15,13 +15,22 @@
     <DataTemplate DataType="{x:Type seq:SeeDarkContainer}">
         <nina:SequenceContainerView>
             <nina:SequenceContainerView.SequenceContainerContent>
-                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                    <TextBlock Text="Exposure (s):" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <TextBox Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged, FallbackValue=20, TargetNullValue=20}"
-                             Width="50" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                    <TextBlock Text="Gain:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <TextBox Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged, FallbackValue=200, TargetNullValue=200}"
-                             Width="50" VerticalAlignment="Center"/>
+                <StackPanel Margin="0,6,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Exposure (s):" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged, FallbackValue=20, TargetNullValue=20}"
+                                 Width="50" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Gain:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged, FallbackValue=200, TargetNullValue=200}"
+                                 Width="50" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Mode:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <ComboBox SelectedValue="{Binding ExecutionMode}" SelectedValuePath="Tag" Width="90" VerticalAlignment="Center">
+                            <ComboBoxItem Content="Manual" Tag="{x:Static seq:DarkExecutionMode.Manual}"/>
+                            <ComboBoxItem Content="Auto (soon)" Tag="{x:Static seq:DarkExecutionMode.Auto}"/>
+                        </ComboBox>
+                    </StackPanel>
+                    <TextBlock Text="Hint: These check values must match the dark capture settings in child instructions."
+                               Foreground="#888" FontSize="11" Margin="0,6,0,0"/>
                 </StackPanel>
             </nina:SequenceContainerView.SequenceContainerContent>
         </nina:SequenceContainerView>
