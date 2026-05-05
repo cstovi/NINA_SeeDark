@@ -18,7 +18,7 @@ namespace NINA.Plugin.SeeDark {
         public string DiscordWebhookUrl { get; set; } = "";
         public int TempBucketSize { get; set; } = 2;
         public int StackTolerance { get; set; } = 2;
-        public double PreBucketLeadC { get; set; } = 1.0;
+        public int PreBucketLeadC { get; set; } = 1;
 
         private static string SettingsPath => Path.Combine(DataFolder, "settings.json");
 

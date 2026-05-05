@@ -51,6 +51,7 @@ namespace NINA.Plugin.SeeDark {
         private void ApplyAndSave() {
             TempBucketSize = 2;
             StackTolerance = Math.Clamp(StackTolerance, 1, 2);
+            PreBucketLeadC = Math.Clamp(PreBucketLeadC, 1, 3);
 
             Settings.TargetExposure      = TargetExposure;
             Settings.MaxAgeDays          = MaxAgeDays;
@@ -68,6 +69,7 @@ namespace NINA.Plugin.SeeDark {
         private void NormalizeSimpleThermalSettings() {
             Settings.TempBucketSize = 2;
             Settings.StackTolerance = Math.Clamp(Settings.StackTolerance, 1, 2);
+            Settings.PreBucketLeadC = Math.Clamp(Settings.PreBucketLeadC, 1, 3);
         }
 
         public async Task SendDiscordAsync(string msg) {
@@ -148,10 +150,10 @@ namespace NINA.Plugin.SeeDark {
             set { _stackTolerance = Math.Clamp(value, 1, 2); RaisePropertyChanged(); }
         }
 
-        private double _preBucketLeadC = 1.0;
-        public double PreBucketLeadC {
+        private int _preBucketLeadC = 1;
+        public int PreBucketLeadC {
             get => _preBucketLeadC;
-            set { _preBucketLeadC = value; RaisePropertyChanged(); }
+            set { _preBucketLeadC = Math.Clamp(value, 1, 3); RaisePropertyChanged(); }
         }
     }
 }
