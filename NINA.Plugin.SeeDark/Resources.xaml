@@ -71,22 +71,16 @@
                 <TextBlock Grid.Row="1" Grid.Column="2" Text="seeds new containers (S30 = 200)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Temp bucket size (°C):" VerticalAlignment="Center" Margin="0,0,8,4"/>
-                <ComboBox Grid.Row="2" Grid.Column="1" SelectedValue="{Binding TempBucketSize}"
-                          SelectedValuePath="Content" VerticalAlignment="Center" Margin="0,0,0,4">
-                    <ComboBoxItem Content="1"/>
-                    <ComboBoxItem Content="2"/>
-                    <ComboBoxItem Content="4"/>
-                </ComboBox>
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="bucket spacing (2 = masters at 20, 22, 24…°C)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="2 (fixed)" VerticalAlignment="Center" Margin="0,0,0,4"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="simple mode: fixed 2°C buckets for predictable matching" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Stack/match tolerance (°C):" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <ComboBox Grid.Row="3" Grid.Column="1" SelectedValue="{Binding StackTolerance}"
                           SelectedValuePath="Content" VerticalAlignment="Center" Margin="0,0,0,4">
                     <ComboBoxItem Content="1"/>
                     <ComboBoxItem Content="2"/>
-                    <ComboBoxItem Content="3"/>
                 </ComboBox>
-                <TextBlock Grid.Row="3" Grid.Column="2" Text="±°C stacking window and runtime match tolerance" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
+                <TextBlock Grid.Row="3" Grid.Column="2" Text="±°C stacking window and runtime match tolerance (simple mode: 1 or 2)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Max master age (days):" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding MaxAgeDays, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>

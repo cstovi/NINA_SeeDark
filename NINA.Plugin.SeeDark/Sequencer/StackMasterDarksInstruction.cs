@@ -74,7 +74,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 frameInfos.Add(info);
             }
 
-            int stackBs = _plugin.Settings.StackTolerance;
+            int stackBs = Math.Clamp(_plugin.Settings.StackTolerance, 1, 2);
             var uniqueKeys = frameInfos
                 .Select(f => (f.TempBucket, f.Exposure, f.Gain, f.ScopeId))
                 .Distinct()
@@ -167,7 +167,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 double exposure = double.Parse(exptimeStr, CultureInfo.InvariantCulture);
                 double temp     = double.Parse(tempStr,    CultureInfo.InvariantCulture);
-                int    bs       = _plugin.Settings.TempBucketSize;
+                int    bs       = 2;
                 int    bucket   = (int)(Math.Floor(temp / bs) * bs);
                 var    parts    = instrume.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 string scopeId  = parts.Length >= 2 ? parts[1] : instrume;

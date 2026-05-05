@@ -79,13 +79,13 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 return true;
             }
 
-            int bs = _plugin.Settings.TempBucketSize;
+            int bs = 2;
             int bucket = (int)(Math.Round(temp / bs) * bs);
             double lead = Math.Max(0.0, _plugin.Settings.PreBucketLeadC);
             Log($"🌡️ Sensor temp {temp:F1}°C → bucket {bucket}°C ({bs}°C steps), gain {Gain}, scope {scopeId}, target exposure {TargetExposure}s, pre-range lead {lead:F1}°C");
 
             var masters = ScanMasterFolder();
-            int tol = _plugin.Settings.StackTolerance;
+            int tol = Math.Clamp(_plugin.Settings.StackTolerance, 1, 2);
             var cutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
             bool needsDarks;
             if (masters.Length == 0) {

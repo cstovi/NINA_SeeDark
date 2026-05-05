@@ -30,6 +30,7 @@ namespace NINA.Plugin.SeeDark {
         public SeeDarkPlugin(ICameraMediator cameraMediator, IProfileService profileService) {
             CameraMediator = cameraMediator;
             Settings = SeeDarkSettings.Load(profileService.ActiveProfile.ImageFileSettings.FilePath);
+            NormalizeSimpleThermalSettings();
 
             TargetExposure        = Settings.TargetExposure;
             MaxAgeDays            = Settings.MaxAgeDays;
@@ -48,6 +49,9 @@ namespace NINA.Plugin.SeeDark {
         public ICommand SaveSettingsCommand { get; }
 
         private void ApplyAndSave() {
+            TempBucketSize = 2;
+            StackTolerance = Math.Clamp(StackTolerance, 1, 2);
+
             Settings.TargetExposure      = TargetExposure;
             Settings.MaxAgeDays          = MaxAgeDays;
             Settings.Gain                = Gain;
@@ -59,6 +63,11 @@ namespace NINA.Plugin.SeeDark {
             Settings.StackTolerance      = StackTolerance;
             Settings.PreBucketLeadC      = PreBucketLeadC;
             Settings.Save();
+        }
+
+        private void NormalizeSimpleThermalSettings() {
+            Settings.TempBucketSize = 2;
+            Settings.StackTolerance = Math.Clamp(Settings.StackTolerance, 1, 2);
         }
 
         public async Task SendDiscordAsync(string msg) {
@@ -130,13 +139,13 @@ namespace NINA.Plugin.SeeDark {
         private int _tempBucketSize = 2;
         public int TempBucketSize {
             get => _tempBucketSize;
-            set { _tempBucketSize = value; RaisePropertyChanged(); }
+            set { _tempBucketSize = 2; RaisePropertyChanged(); }
         }
 
         private int _stackTolerance = 2;
         public int StackTolerance {
             get => _stackTolerance;
-            set { _stackTolerance = value; RaisePropertyChanged(); }
+            set { _stackTolerance = Math.Clamp(value, 1, 2); RaisePropertyChanged(); }
         }
 
         private double _preBucketLeadC = 1.0;
