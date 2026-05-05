@@ -139,7 +139,7 @@ namespace NINA.Plugin.SeeDark {
             set { _stackTolerance = value; RaisePropertyChanged(); }
         }
 
-        private double _preBucketLeadC = 0.5;
+        private double _preBucketLeadC = 1.0;
         public double PreBucketLeadC {
             get => _preBucketLeadC;
             set { _preBucketLeadC = value; RaisePropertyChanged(); }

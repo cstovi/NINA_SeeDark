@@ -82,7 +82,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             int bs = _plugin.Settings.TempBucketSize;
             int bucket = (int)(Math.Round(temp / bs) * bs);
             double lead = Math.Max(0.0, _plugin.Settings.PreBucketLeadC);
-            Log($"🌡️ Sensor temp {temp:F1}°C → bucket {bucket}°C ({bs}°C steps), gain {Gain}, scope {scopeId}, target exposure {TargetExposure}s, pre-bucket lead {lead:F1}°C");
+            Log($"🌡️ Sensor temp {temp:F1}°C → bucket {bucket}°C ({bs}°C steps), gain {Gain}, scope {scopeId}, target exposure {TargetExposure}s, pre-range lead {lead:F1}°C");
 
             var masters = ScanMasterFolder();
             int tol = _plugin.Settings.StackTolerance;
@@ -102,7 +102,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
             if (!needsDarks) return false;
 
-            double startThreshold = bucket - lead;
+            double startThreshold = (bucket - tol) - lead;
             double endThreshold = bucket + tol;
             bool inWindow = temp >= startThreshold && temp <= endThreshold;
             if (!inWindow) {

@@ -92,9 +92,9 @@
                 <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding MaxAgeDays, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
                 <TextBlock Grid.Row="4" Grid.Column="2" Text="default 180 (6 months)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
 
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="Pre-bucket lead (°C):" VerticalAlignment="Center" Margin="0,4,8,0"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Pre-range lead (°C):" VerticalAlignment="Center" Margin="0,4,8,0"/>
                 <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PreBucketLeadC, StringFormat={}{0:F1}, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"/>
-                <TextBlock Grid.Row="5" Grid.Column="2" Text="start gap check this far below bucket center" Foreground="#888" VerticalAlignment="Center" Margin="8,4,0,0" FontSize="11"/>
+                <TextBlock Grid.Row="5" Grid.Column="2" Text="start this far below lower match bound (bucket - tolerance)" Foreground="#888" VerticalAlignment="Center" Margin="8,4,0,0" FontSize="11"/>
             </Grid>
 
             <TextBlock Text="Notifications" FontWeight="Bold" Margin="0,16,0,6"/>
