@@ -22,9 +22,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. Gets camera sensor temperature via `ICameraMediator`
 2. Rounds to nearest 2°C bucket: `(int)(Math.Round(temp / 2.0) * 2)`
 3. Resolves scope ID from camera driver name (see shared guide)
-4. Loads and caches `DarkLibrary.csv` (invalidated on file write-time change)
-5. Matches: temp bucket + exposure (±0.5s) + gain + scope ID + within `MaxAgeDays`
-6. Executes children only if no matching row found
+4. Scans `MasterLibraryFolder` FITS masters and filters for DARK frames
+5. Matches: bucket-centered temp tolerance + exposure (±0.5s) + gain + scope ID + within `MaxAgeDays`
+6. Uses pre-range trigger window:
+   - `start = (bucket - StackTolerance) - PreBucketLeadC`
+   - `end = bucket + StackTolerance`
+7. Executes children only if no matching master exists **and** sensor temp is inside start window
+8. `ExecutionMode` enum now exists in container (`Manual` default, `Auto` scaffold only; no auto-capture behavior yet)
+
+## Current Session State (May 2026)
+
+- Plugin is intentionally in **simple thermal mode**:
+  - bucket size fixed to `2°C`
+  - stack/match tolerance limited to `1` or `2`
+  - pre-range lead limited to `1`, `2`, or `3` °C
+- Container UI now includes:
+  - `Execution Mode` selector (`Manual`, `Auto (soon)`)
+  - hint text reminding that check exposure/gain must match child dark-capture settings
+- Design intent remains:
+  - `SeeDarkContainer` = decision gate
+  - user sequence children currently perform actual dark capture
+  - auto-capture may be added later behind execution mode
 
 ## Dark Stacker (`StackMasterDarksInstruction.cs`)
 
@@ -46,13 +64,15 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| `DarkLibraryCsvPath` | string | _(empty)_ | Path to master dark library CSV |
 | `TargetExposure` | double | 20s | Exposure time to match against |
 | `MaxAgeDays` | int | 180 | Max age of an acceptable dark |
 | `Gain` | int | 200 | Camera gain to match (Seestar S30 default) |
 | `RawDarksFolder` | string | _(empty)_ | Folder scanned by the stacker for raw dark frames |
 | `MasterLibraryFolder` | string | _(empty)_ | Folder where stacker writes master FITS files |
 | `MinFrameCount` | int | 20 | Minimum frames required to stack a group |
+| `TempBucketSize` | int | 2 | Fixed to 2 in simple mode |
+| `StackTolerance` | int | 2 | Clamped to 1..2 in simple mode |
+| `PreBucketLeadC` | int | 1 | Pre-range lead below lower match bound; clamped to 1..3 |
 
 ## DarkLibrary.csv Format
 
