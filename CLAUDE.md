@@ -44,6 +44,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - user sequence children currently perform actual dark capture
   - auto-capture may be added later behind execution mode
 
+## Next Planned Work (Temporary)
+
+> Remove or update these items once implemented.
+
+- [ ] Wire `ExecutionMode=Auto` to first strategy: "take N darks all at once".
+- [ ] Add minimal auto-capture options in container UI (frame count `N` only for v1).
+- [ ] Keep `ExecutionMode=Manual` as default and preserve current sequence-driven behavior.
+- [ ] If auto mode ships, update this file and remove completed checklist entries.
+
 ## Dark Stacker (`StackMasterDarksInstruction.cs`)
 
 1. Scans `RawDarksFolder` recursively for `*.fit*` with `FILTER=DARK`
