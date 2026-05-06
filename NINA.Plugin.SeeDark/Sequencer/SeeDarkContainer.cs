@@ -8,6 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using NINA.Core.Model;
+using NINA.Core.Model.Equipment;
+using NINA.Equipment.Model;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Container.ExecutionStrategy;
 using NINA.Sequencer.SequenceItem;
@@ -20,7 +22,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
     [Export(typeof(ISequenceItem))]
     [Export(typeof(ISequenceContainer))]
-    [ExportMetadata("Name", "SeeDark Dark Gap Check")]
+    [ExportMetadata("Name", "SeeDark Dark Manager")]
     [ExportMetadata("Description", "Runs child instructions only when no matching master dark exists for the current sensor temperature, gain, and exposure")]
     [ExportMetadata("Icon", "SeeDark_Icon")]
     [ExportMetadata("Category", "SeeDark")]
@@ -47,8 +49,10 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         [JsonProperty]
         public DarkExecutionMode ExecutionMode {
             get => _executionMode;
-            set { _executionMode = value; RaisePropertyChanged(); }
+            set { _executionMode = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(ShowManualChildren)); }
         }
+
+        public bool ShowManualChildren => ExecutionMode == DarkExecutionMode.Manual;
 
         [ImportingConstructor]
         public SeeDarkContainer(SeeDarkPlugin plugin) : base(new SequentialStrategy()) {
@@ -56,7 +60,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             TargetExposure = plugin.Settings.TargetExposure;
             Gain           = plugin.Settings.Gain;
             ExecutionMode  = DarkExecutionMode.Manual;
-            Name = "SeeDark Dark Gap Check";
+            Name = "SeeDark Dark Manager";
             if (System.Windows.Application.Current?.Resources["SeeDark_Icon"] is System.Windows.Media.GeometryGroup icon)
                 Icon = icon;
             _logFilePath = Path.Combine(
@@ -70,13 +74,97 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             TargetExposure = cloneMe.TargetExposure;
             Gain           = cloneMe.Gain;
             ExecutionMode  = cloneMe.ExecutionMode;
-            Name = "SeeDark Dark Gap Check";
+            Name = "SeeDark Dark Manager";
             Icon = cloneMe.Icon;
         }
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token) {
-            if (NeedsDarks())
+            if (!NeedsDarks()) return;
+            if (ExecutionMode == DarkExecutionMode.Auto) {
+                await ExecuteAutoCapture(progress, token);
+                return;
+            }
+            await base.Execute(progress, token);
+        }
+
+        private async Task ExecuteAutoCapture(IProgress<ApplicationStatus> progress, CancellationToken token) {
+            const int targetFrames = 30;
+            const int minFrames = 20;
+            const int maxFrames = 50;
+            const int maxConsecutiveBucketMisses = 3;
+
+            double startTemp = GetSensorTempFromMediator();
+            if (double.IsNaN(startTemp)) {
+                Log("⚠️ Auto mode could not read sensor temperature at start; skipping auto capture and running child instructions instead.");
                 await base.Execute(progress, token);
+                return;
+            }
+
+            int bucketStepC = Math.Max(1, _plugin.Settings.TempBucketSize);
+            int targetBucket = TemperatureBucketing.ToBucket(startTemp, bucketStepC);
+            var darkFilter = _plugin.GetDarkFilter();
+            if (darkFilter == null) {
+                Log("⚠️ Auto mode could not find a DARK filter definition. Configure a DARK filter or use Manual mode.");
+                return;
+            }
+
+            Log($"🤖 Auto mode starting dark capture: target {targetFrames}, min {minFrames}, max {maxFrames}, target bucket {targetBucket}°C");
+
+            try {
+                await _plugin.FilterWheelMediator.ChangeFilter(darkFilter, token, progress);
+                Log($"🎛️ Switched filter to {darkFilter.Name}");
+            } catch (Exception ex) {
+                Log($"⚠️ Failed to switch to DARK filter: {ex.Message}");
+                return;
+            }
+
+            int goodFrames = 0;
+            int attempts = 0;
+            int consecutiveBucketMisses = 0;
+
+            while (!token.IsCancellationRequested && attempts < maxFrames && goodFrames < targetFrames) {
+                attempts++;
+                var capture = new CaptureSequence {
+                    ExposureTime = TargetExposure,
+                    Gain = Gain,
+                    Offset = -1,
+                    ImageType = CaptureSequence.ImageTypes.DARK,
+                };
+
+                try {
+                    await _plugin.ImagingMediator.CaptureImage(capture, token, progress);
+                } catch (Exception ex) {
+                    Log($"⚠️ Auto dark capture failed on frame {attempts}: {ex.Message}");
+                    break;
+                }
+
+                double frameTemp = GetSensorTempFromMediator();
+                if (double.IsNaN(frameTemp)) {
+                    Log($"⚠️ Frame {attempts}: temperature unavailable; counting frame toward target.");
+                    goodFrames++;
+                    continue;
+                }
+
+                int frameBucket = TemperatureBucketing.ToBucket(frameTemp, bucketStepC);
+                if (frameBucket == targetBucket) {
+                    goodFrames++;
+                    consecutiveBucketMisses = 0;
+                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target) — accepted ({goodFrames}/{targetFrames})");
+                } else {
+                    consecutiveBucketMisses++;
+                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target {targetBucket}°C) — drift count {consecutiveBucketMisses}/{maxConsecutiveBucketMisses}");
+                    if (consecutiveBucketMisses >= maxConsecutiveBucketMisses) {
+                        Log("⏹️ Auto capture stopping early due to sustained bucket drift.");
+                        break;
+                    }
+                }
+            }
+
+            if (goodFrames >= minFrames) {
+                Log($"✅ Auto dark capture complete with {goodFrames} accepted frame(s).");
+            } else {
+                Log($"⚠️ Auto dark capture ended with only {goodFrames} accepted frame(s); need at least {minFrames}. Run again when temperature is stable.");
+            }
         }
 
         private bool NeedsDarks() {
@@ -93,13 +181,12 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 return true;
             }
 
-            int bs = 2;
-            int bucket = (int)(Math.Round(temp / bs) * bs);
+            int bucketStepC = Math.Max(1, _plugin.Settings.TempBucketSize);
+            int bucket = TemperatureBucketing.ToBucket(temp, bucketStepC);
             double lead = Math.Max(0.0, _plugin.Settings.PreBucketLeadC);
-            Log($"🌡️ Sensor temp {temp:F1}°C → bucket {bucket}°C ({bs}°C steps), gain {Gain}, scope {scopeId}, target exposure {TargetExposure}s, pre-range lead {lead:F1}°C");
+            Log($"🌡️ Sensor temp {temp:F1}°C → bucket {bucket}°C ({bucketStepC}°C steps), gain {Gain}, scope {scopeId}, target exposure {TargetExposure}s, pre-range lead {lead:F1}°C");
 
             var masters = ScanMasterFolder();
-            int tol = Math.Clamp(_plugin.Settings.StackTolerance, 1, 2);
             var cutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
             bool needsDarks;
             if (masters.Length == 0) {
@@ -107,7 +194,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 needsDarks = true;
             } else {
                 needsDarks = !masters.Any(r =>
-                    Math.Abs(r.Temp - bucket) <= tol &&
+                    r.Temp == bucket &&
                     Math.Abs(r.Exposure - TargetExposure) < 0.5 &&
                     r.Gain == Gain &&
                     r.Scope == scopeId &&
@@ -116,15 +203,16 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
             if (!needsDarks) return false;
 
-            double startThreshold = (bucket - tol) - lead;
-            double endThreshold = bucket + tol;
-            bool inWindow = temp >= startThreshold && temp <= endThreshold;
+            double halfStep = bucketStepC / 2.0;
+            double startThreshold = (bucket - halfStep) - lead;
+            double endThresholdExclusive = bucket + halfStep;
+            bool inWindow = temp >= startThreshold && temp < endThresholdExclusive;
             if (!inWindow) {
-                Log($"⏳ Missing dark for {bucket}°C bucket, but sensor {temp:F1}°C outside start window {startThreshold:F1}..{endThreshold:F1}°C — waiting");
+                Log($"⏳ Missing dark for {bucket}°C bucket, but sensor {temp:F1}°C outside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C — waiting");
                 return false;
             }
 
-            Log($"🌑 Missing dark for {bucket}°C bucket and sensor {temp:F1}°C is inside start window {startThreshold:F1}..{endThreshold:F1}°C — darks needed!");
+            Log($"🌑 Missing dark for {bucket}°C bucket and sensor {temp:F1}°C is inside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C — darks needed!");
             return true;
         }
 
@@ -161,7 +249,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 try {
                     double rawTemp    = double.Parse(tempStr, CultureInfo.InvariantCulture);
-                    int    masterTemp = (int)Math.Round(rawTemp);
+                    int    bucketStepC = Math.Max(1, _plugin.Settings.TempBucketSize);
+                    int    masterTemp  = TemperatureBucketing.ToBucket(rawTemp, bucketStepC);
                     double exp        = double.Parse(expStr, CultureInfo.InvariantCulture);
                     var    parts   = instrume.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     string scopeId = parts.Length >= 2 ? parts[1] : instrume;

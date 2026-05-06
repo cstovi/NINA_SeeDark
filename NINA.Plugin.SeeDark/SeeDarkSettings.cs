@@ -15,10 +15,13 @@ namespace NINA.Plugin.SeeDark {
         public string RawDarksFolder { get; set; } = "";
         public string MasterLibraryFolder { get; set; } = "";
         public int MinFrameCount { get; set; } = 20;
+        public int MaxFrameCount { get; set; } = 50;
+        public bool EnableLifecycleManagement { get; set; } = false;
+        public bool DeleteArchivedRawsAfterMaxAge { get; set; } = false;
         public string DiscordWebhookUrl { get; set; } = "";
         public int TempBucketSize { get; set; } = 2;
         public int StackTolerance { get; set; } = 2;
-        public int PreBucketLeadC { get; set; } = 1;
+        public int PreBucketLeadC { get; set; } = 2;
 
         private static string SettingsPath => Path.Combine(DataFolder, "settings.json");
 

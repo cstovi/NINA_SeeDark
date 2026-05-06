@@ -20,6 +20,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
     [ExportMetadata("Icon", "SeeDark_Icon")]
     [ExportMetadata("Category", "SeeDark")]
     public class StackMasterDarksInstruction : SequenceItem {
+        private const string ArchiveFolderName = "_archived";
 
         private readonly SeeDarkPlugin _plugin;
         private readonly string _logFilePath;
@@ -59,46 +60,103 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 Log("❌ Master library folder not configured — aborting"); return;
             }
             Directory.CreateDirectory(masterFolder);
+            string archiveFolder = Path.Combine(rawFolder, ArchiveFolderName);
+            Directory.CreateDirectory(archiveFolder);
+            bool lifecycleEnabled = _plugin.Settings.EnableLifecycleManagement;
+            bool deleteArchivedEnabled = lifecycleEnabled && _plugin.Settings.DeleteArchivedRawsAfterMaxAge;
 
             Log($"🔭 Scanning {rawFolder}");
             Log($"🔭 Masters → {masterFolder}");
-            var allFiles = Directory.GetFiles(rawFolder, "*.fit*", SearchOption.AllDirectories);
-            Log($"🔭 Found {allFiles.Length} FITS file(s)");
+            Log($"🔭 Lifecycle management: {(lifecycleEnabled ? "enabled" : "disabled")}");
+            Log($"🔭 Archive cleanup: {(deleteArchivedEnabled ? "enabled" : "disabled")}");
+            if (lifecycleEnabled) Log($"🔭 Archive → {archiveFolder}");
+            var allFiles = Directory.GetFiles(rawFolder, "*.fit*", SearchOption.AllDirectories)
+                .Where(p => !IsUnderDirectory(p, archiveFolder))
+                .ToArray();
+            var archivedFiles = lifecycleEnabled
+                ? Directory.GetFiles(archiveFolder, "*.fit*", SearchOption.AllDirectories)
+                : Array.Empty<string>();
+            Log($"🔭 Found {allFiles.Length} active FITS file(s), {archivedFiles.Length} archived FITS file(s)");
 
-            var frameInfos = new List<FrameInfo>();
+            var activeFrameInfos = new List<FrameInfo>();
             foreach (var path in allFiles) {
                 token.ThrowIfCancellationRequested();
                 var info = ReadFrameInfo(path);
                 if (info == null) continue;
                 if (!string.Equals(info.Filter, "DARK", StringComparison.OrdinalIgnoreCase)) continue;
-                frameInfos.Add(info);
+                activeFrameInfos.Add(info);
+            }
+            var archivedFrameInfos = new List<FrameInfo>();
+            foreach (var path in archivedFiles) {
+                token.ThrowIfCancellationRequested();
+                var info = ReadFrameInfo(path);
+                if (info == null) continue;
+                if (!string.Equals(info.Filter, "DARK", StringComparison.OrdinalIgnoreCase)) continue;
+                archivedFrameInfos.Add(info);
             }
 
-            int stackBs = Math.Clamp(_plugin.Settings.StackTolerance, 1, 2);
-            var uniqueKeys = frameInfos
+            int bucketStepC = Math.Max(1, _plugin.Settings.TempBucketSize);
+            int minFrameCount = Math.Max(1, _plugin.Settings.MinFrameCount);
+            int maxFrameCount = Math.Max(minFrameCount, _plugin.Settings.MaxFrameCount);
+            var maxAgeDays = Math.Max(1, _plugin.Settings.MaxAgeDays);
+            var masterCutoff = DateTime.Now.AddDays(-maxAgeDays);
+            var rawCutoff = DateTime.Now.AddDays(-maxAgeDays);
+            var allFrameInfos = lifecycleEnabled
+                ? activeFrameInfos.Concat(archivedFrameInfos).ToList()
+                : activeFrameInfos.ToList();
+            var uniqueKeys = allFrameInfos
                 .Select(f => (f.TempBucket, f.Exposure, f.Gain, f.ScopeId))
                 .Distinct()
                 .ToList();
-            Log($"🔭 {frameInfos.Count} DARK frame(s) across {uniqueKeys.Count} bucket key(s)");
+            Log($"🔭 {allFrameInfos.Count} DARK frame(s) across {uniqueKeys.Count} bucket key(s)");
 
             foreach (var key in uniqueKeys) {
                 token.ThrowIfCancellationRequested();
-                var frames = frameInfos
-                    .Where(f => Math.Abs(f.TempBucket - key.TempBucket) <= stackBs &&
-                                Math.Abs(f.Exposure - key.Exposure) < 0.5 &&
-                                f.Gain == key.Gain &&
-                                f.ScopeId == key.ScopeId)
-                    .ToList();
-                Log($"🔭 Group {key.TempBucket}°C ±{stackBs}°C / {key.Exposure:F0}s / gain {key.Gain} / {key.ScopeId}: {frames.Count} frame(s) (window {key.TempBucket - stackBs}–{key.TempBucket + stackBs}°C)");
-
-                if (frames.Count < _plugin.Settings.MinFrameCount) {
-                    Log($"⏭️ Skipped — need {_plugin.Settings.MinFrameCount}, have {frames.Count}");
+                var matchingMaster = FindNewestMaster(masterFolder, key.TempBucket, key.Exposure, key.Gain, key.ScopeId);
+                bool hasFreshMaster = matchingMaster != null && matchingMaster.DateCreated >= masterCutoff;
+                if (hasFreshMaster) {
+                    Log($"✅ Existing master is fresh for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} ({matchingMaster!.DateCreated:yyyy-MM-dd}) — skipping rebuild");
                     continue;
                 }
 
-                var pixelArrays = new List<float[]>(frames.Count);
+                var validActiveFrames = activeFrameInfos
+                    .Where(f => f.TempBucket == key.TempBucket &&
+                                Math.Abs(f.Exposure - key.Exposure) < 0.5 &&
+                                f.Gain == key.Gain &&
+                                f.ScopeId == key.ScopeId &&
+                                f.SessionTimestamp >= rawCutoff)
+                    .ToList();
+                var validArchivedFrames = archivedFrameInfos
+                    .Where(f => f.TempBucket == key.TempBucket &&
+                                Math.Abs(f.Exposure - key.Exposure) < 0.5 &&
+                                f.Gain == key.Gain &&
+                                f.ScopeId == key.ScopeId &&
+                                f.SessionTimestamp >= rawCutoff)
+                    .ToList();
+                var candidateFrames = lifecycleEnabled
+                    ? validActiveFrames.Concat(validArchivedFrames)
+                    : validActiveFrames;
+                var selectedFrames = candidateFrames
+                    .OrderByDescending(f => f.SessionTimestamp)
+                    .Take(maxFrameCount)
+                    .ToList();
+                double lowerBound = key.TempBucket - (bucketStepC / 2.0);
+                double upperBound = key.TempBucket + (bucketStepC / 2.0);
+                int eligibleCount = lifecycleEnabled
+                    ? validActiveFrames.Count + validArchivedFrames.Count
+                    : validActiveFrames.Count;
+                string sourceText = lifecycleEnabled ? "active+archive" : "active";
+                Log($"🔭 Group {key.TempBucket}°C [{lowerBound:F1},{upperBound:F1}) / {key.Exposure:F0}s / gain {key.Gain} / {key.ScopeId}: using {selectedFrames.Count}/{eligibleCount} most recent valid frame(s) from {sourceText}");
+
+                if (selectedFrames.Count < minFrameCount) {
+                    string reason = matchingMaster == null ? "missing" : "expired";
+                    Log($"⚠️ Master {reason} for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId}, but only {selectedFrames.Count} valid cached frame(s); need {minFrameCount}. Run a new dark sequence.");
+                    continue;
+                }
+
+                var pixelArrays = new List<float[]>(selectedFrames.Count);
                 int width = 0, height = 0;
-                foreach (var frame in frames) {
+                foreach (var frame in selectedFrames) {
                     token.ThrowIfCancellationRequested();
                     var pixels = LoadPixels(frame.Path, out int w, out int h);
                     if (pixels == null) { Log($"⚠️ Skipped unreadable frame: {frame.Path}"); continue; }
@@ -107,7 +165,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     pixelArrays.Add(pixels);
                 }
 
-                if (pixelArrays.Count < _plugin.Settings.MinFrameCount) {
+                if (pixelArrays.Count < minFrameCount) {
                     Log($"⏭️ Only {pixelArrays.Count} frame(s) loaded — skipping group");
                     continue;
                 }
@@ -122,7 +180,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 }
 
                 var ts          = DateTime.Now.ToString("yyyyMMddHHmmss");
-                var sessionDate = frames.Max(f => f.SessionDate);
+                var sessionDate = selectedFrames.Max(f => f.SessionTimestamp).Date;
                 var extraHeaders = new Dictionary<string, object> {
                     ["EXPTIME"]  = key.Exposure,
                     ["CCD-TEMP"] = (double)key.TempBucket,
@@ -139,9 +197,100 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 Log($"💾 Written SIRIL: {Path.GetFileName(sirilPath)}");
                 WriteFitsUInt16(ninalivePath, median, width, height, extraHeaders);
                 Log($"💾 Written NINALIVE: {Path.GetFileName(ninalivePath)}");
+
+                if (lifecycleEnabled) {
+                    foreach (var used in selectedFrames.Where(f => IsUnderDirectory(f.Path, rawFolder) && !IsUnderDirectory(f.Path, archiveFolder))) {
+                        MoveToArchive(used.Path, rawFolder, archiveFolder);
+                    }
+                }
+                string newestUsedDate = selectedFrames.Max(f => f.SessionTimestamp).ToString("yyyy-MM-dd");
+                string reasonText = matchingMaster == null ? "missing" : "expired";
+                Log($"✅ Master Dark {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} was {reasonText}. Successfully rebuilt using cached raw frames from {newestUsedDate}.");
+            }
+
+            if (deleteArchivedEnabled) {
+                PurgeArchivedRawsOlderThan(archiveFolder, rawCutoff);
             }
 
             Log("✅ Stack Master Darks complete");
+        }
+
+        private void PurgeArchivedRawsOlderThan(string archiveFolder, DateTime cutoff) {
+            foreach (var path in Directory.GetFiles(archiveFolder, "*.fit*", SearchOption.AllDirectories)) {
+                try {
+                    var info = ReadFrameInfo(path);
+                    if (info == null) continue;
+                    if (info.SessionTimestamp < cutoff) {
+                        File.Delete(path);
+                        Log($"🗑️ Deleted archived raw older than age window: {Path.GetFileName(path)}");
+                    }
+                } catch (Exception ex) {
+                    Log($"⚠️ Failed deleting archived raw {Path.GetFileName(path)}: {ex.Message}");
+                }
+            }
+        }
+
+        private static bool IsUnderDirectory(string filePath, string directoryPath) {
+            var fullFile = Path.GetFullPath(filePath);
+            var fullDir = Path.GetFullPath(directoryPath);
+            if (!fullDir.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                fullDir += Path.DirectorySeparatorChar;
+            return fullFile.StartsWith(fullDir, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void MoveToArchive(string filePath, string rawRoot, string archiveRoot) {
+            try {
+                var relative = Path.GetRelativePath(rawRoot, filePath);
+                var targetPath = Path.Combine(archiveRoot, relative);
+                var targetDir = Path.GetDirectoryName(targetPath);
+                if (!string.IsNullOrEmpty(targetDir))
+                    Directory.CreateDirectory(targetDir);
+                if (File.Exists(targetPath))
+                    targetPath = Path.Combine(targetDir ?? archiveRoot, $"{Path.GetFileNameWithoutExtension(targetPath)}_{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(targetPath)}");
+                File.Move(filePath, targetPath);
+                Log($"📦 Archived raw frame: {Path.GetFileName(filePath)}");
+            } catch (Exception ex) {
+                Log($"⚠️ Failed to archive raw frame {Path.GetFileName(filePath)}: {ex.Message}");
+            }
+        }
+
+        private MasterInfo? FindNewestMaster(string masterFolder, int bucket, double exposure, int gain, string scopeId) {
+            MasterInfo? newest = null;
+            foreach (var path in Directory.GetFiles(masterFolder, "*.fit*")) {
+                var h = FitsHeaderReader.ReadHeaders(path);
+                if (h == null) continue;
+                if (!h.TryGetValue("IMAGETYP", out var imagetyp) ||
+                    imagetyp.IndexOf("DARK", StringComparison.OrdinalIgnoreCase) < 0) continue;
+
+                h.TryGetValue("CCD-TEMP", out var tempStr);
+                h.TryGetValue("EXPTIME", out var expStr);
+                h.TryGetValue("GAIN", out var gainStr);
+                h.TryGetValue("INSTRUME", out var instrume);
+                h.TryGetValue("DATE-OBS", out var dateStr);
+                if (string.IsNullOrEmpty(tempStr) || string.IsNullOrEmpty(expStr) || string.IsNullOrEmpty(instrume))
+                    continue;
+
+                try {
+                    int bucketStepC = Math.Max(1, _plugin.Settings.TempBucketSize);
+                    int masterBucket = TemperatureBucketing.ToBucket(double.Parse(tempStr, CultureInfo.InvariantCulture), bucketStepC);
+                    double masterExposure = double.Parse(expStr, CultureInfo.InvariantCulture);
+                    int masterGain = int.TryParse(gainStr, out var mg) ? mg : 0;
+                    var parts = instrume.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    string masterScope = parts.Length >= 2 ? parts[1] : instrume;
+                    DateTime created = string.IsNullOrWhiteSpace(dateStr)
+                        ? File.GetLastWriteTime(path)
+                        : DateTime.Parse(dateStr, CultureInfo.InvariantCulture);
+
+                    if (masterBucket != bucket ||
+                        Math.Abs(masterExposure - exposure) >= 0.5 ||
+                        masterGain != gain ||
+                        masterScope != scopeId) continue;
+
+                    if (newest == null || created > newest.DateCreated)
+                        newest = new MasterInfo(path, created);
+                } catch { }
+            }
+            return newest;
         }
 
         private FrameInfo? ReadFrameInfo(string path) {
@@ -167,13 +316,13 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 double exposure = double.Parse(exptimeStr, CultureInfo.InvariantCulture);
                 double temp     = double.Parse(tempStr,    CultureInfo.InvariantCulture);
-                int    bs       = 2;
-                int    bucket   = (int)(Math.Floor(temp / bs) * bs);
+                int    bucketStepC = Math.Max(1, _plugin.Settings.TempBucketSize);
+                int    bucket      = TemperatureBucketing.ToBucket(temp, bucketStepC);
                 var    parts    = instrume.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 string scopeId  = parts.Length >= 2 ? parts[1] : instrume;
                 int    gain     = int.TryParse(gainStr, out var g) ? g : 0;
 
-                return new FrameInfo(path, filter?.Trim() ?? "", date.Date, exposure, bucket, gain, scopeId);
+                return new FrameInfo(path, filter?.Trim() ?? "", date, exposure, bucket, gain, scopeId);
             } catch { return null; }
         }
 
@@ -324,7 +473,9 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         }
 
         private record FrameInfo(
-            string Path, string Filter, DateTime SessionDate,
+            string Path, string Filter, DateTime SessionTimestamp,
             double Exposure, int TempBucket, int Gain, string ScopeId);
+
+        private record MasterInfo(string Path, DateTime DateCreated);
     }
 }

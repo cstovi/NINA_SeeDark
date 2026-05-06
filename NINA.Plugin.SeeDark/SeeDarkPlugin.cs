@@ -5,9 +5,9 @@ using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Input;
+using System.Linq;
 using Newtonsoft.Json;
-using NINA.Core.Utility;
+using NINA.Core.Model.Equipment;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Plugin;
 using NINA.Plugin.Interfaces;
@@ -18,19 +18,32 @@ namespace NINA.Plugin.SeeDark {
     [Export(typeof(IPluginManifest))]
     [Export]
     public class SeeDarkPlugin : PluginBase, IPluginManifest, INotifyPropertyChanged {
+        private bool _isInitializing;
+        private bool _isSyncing;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void RaisePropertyChanged([CallerMemberName] string? propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         public ICameraMediator CameraMediator { get; }
+        public IImagingMediator ImagingMediator { get; }
+        public IFilterWheelMediator FilterWheelMediator { get; }
+        public IProfileService ProfileService { get; }
         public SeeDarkSettings Settings { get; }
 
         [ImportingConstructor]
-        public SeeDarkPlugin(ICameraMediator cameraMediator, IProfileService profileService) {
+        public SeeDarkPlugin(
+            ICameraMediator cameraMediator,
+            IImagingMediator imagingMediator,
+            IFilterWheelMediator filterWheelMediator,
+            IProfileService profileService) {
             CameraMediator = cameraMediator;
+            ImagingMediator = imagingMediator;
+            FilterWheelMediator = filterWheelMediator;
+            ProfileService = profileService;
             Settings = SeeDarkSettings.Load(profileService.ActiveProfile.ImageFileSettings.FilePath);
             NormalizeSimpleThermalSettings();
+            _isInitializing = true;
 
             TargetExposure        = Settings.TargetExposure;
             MaxAgeDays            = Settings.MaxAgeDays;
@@ -38,39 +51,83 @@ namespace NINA.Plugin.SeeDark {
             RawDarksFolder        = Settings.RawDarksFolder;
             MasterLibraryFolder   = Settings.MasterLibraryFolder;
             MinFrameCount         = Settings.MinFrameCount;
+            MaxFrameCount         = Settings.MaxFrameCount;
+            EnableLifecycleManagement = Settings.EnableLifecycleManagement;
+            DeleteArchivedRawsAfterMaxAge = Settings.DeleteArchivedRawsAfterMaxAge;
             DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
             TempBucketSize        = Settings.TempBucketSize;
             StackTolerance        = Settings.StackTolerance;
             PreBucketLeadC        = Settings.PreBucketLeadC;
-
-            SaveSettingsCommand = new RelayCommand(_ => ApplyAndSave());
+            _isInitializing = false;
+            SyncAndSaveSettings();
         }
 
-        public ICommand SaveSettingsCommand { get; }
+        private void SyncAndSaveSettings() {
+            if (_isInitializing || _isSyncing) return;
+            _isSyncing = true;
+            try {
+                int normalizedBucketSize = NormalizeBucketSize(_tempBucketSize);
+                if (_tempBucketSize != normalizedBucketSize) {
+                    _tempBucketSize = normalizedBucketSize;
+                    RaisePropertyChanged(nameof(TempBucketSize));
+                }
+                int normalizedTolerance = DeriveInternalTolerance(_tempBucketSize);
+                if (_stackTolerance != normalizedTolerance) {
+                    _stackTolerance = normalizedTolerance;
+                    RaisePropertyChanged(nameof(StackTolerance));
+                }
+                int normalizedPreLead = DeriveInternalPreBucketLeadC();
+                if (_preBucketLeadC != normalizedPreLead) {
+                    _preBucketLeadC = normalizedPreLead;
+                    RaisePropertyChanged(nameof(PreBucketLeadC));
+                }
+                int normalizedMin = DeriveInternalMinFrameCount();
+                if (_minFrameCount != normalizedMin) {
+                    _minFrameCount = normalizedMin;
+                    RaisePropertyChanged(nameof(MinFrameCount));
+                }
+                int normalizedMax = DeriveInternalMaxFrameCount();
+                if (_maxFrameCount != normalizedMax) {
+                    _maxFrameCount = normalizedMax;
+                    RaisePropertyChanged(nameof(MaxFrameCount));
+                }
+                if (!_enableLifecycleManagement && _deleteArchivedRawsAfterMaxAge) {
+                    _deleteArchivedRawsAfterMaxAge = false;
+                    RaisePropertyChanged(nameof(DeleteArchivedRawsAfterMaxAge));
+                }
 
-        private void ApplyAndSave() {
-            TempBucketSize = 2;
-            StackTolerance = Math.Clamp(StackTolerance, 1, 2);
-            PreBucketLeadC = Math.Clamp(PreBucketLeadC, 1, 3);
-
-            Settings.TargetExposure      = TargetExposure;
-            Settings.MaxAgeDays          = MaxAgeDays;
-            Settings.Gain                = Gain;
-            Settings.RawDarksFolder      = RawDarksFolder;
-            Settings.MasterLibraryFolder = MasterLibraryFolder;
-            Settings.MinFrameCount       = MinFrameCount;
-            Settings.DiscordWebhookUrl   = DiscordWebhookUrl;
-            Settings.TempBucketSize      = TempBucketSize;
-            Settings.StackTolerance      = StackTolerance;
-            Settings.PreBucketLeadC      = PreBucketLeadC;
-            Settings.Save();
+                Settings.TargetExposure      = _targetExposure;
+                Settings.MaxAgeDays          = _maxAgeDays;
+                Settings.Gain                = _gain;
+                Settings.RawDarksFolder      = _rawDarksFolder;
+                Settings.MasterLibraryFolder = _masterLibraryFolder;
+                Settings.MinFrameCount       = _minFrameCount;
+                Settings.MaxFrameCount       = _maxFrameCount;
+                Settings.EnableLifecycleManagement = _enableLifecycleManagement;
+                Settings.DeleteArchivedRawsAfterMaxAge = _deleteArchivedRawsAfterMaxAge;
+                Settings.DiscordWebhookUrl   = _discordWebhookUrl;
+                Settings.TempBucketSize      = _tempBucketSize;
+                Settings.StackTolerance      = _stackTolerance;
+                Settings.PreBucketLeadC      = _preBucketLeadC;
+                Settings.Save();
+            } finally {
+                _isSyncing = false;
+            }
         }
 
         private void NormalizeSimpleThermalSettings() {
-            Settings.TempBucketSize = 2;
-            Settings.StackTolerance = Math.Clamp(Settings.StackTolerance, 1, 2);
-            Settings.PreBucketLeadC = Math.Clamp(Settings.PreBucketLeadC, 1, 3);
+            Settings.TempBucketSize = NormalizeBucketSize(Settings.TempBucketSize);
+            Settings.StackTolerance = DeriveInternalTolerance(Settings.TempBucketSize);
+            Settings.PreBucketLeadC = DeriveInternalPreBucketLeadC();
+            Settings.MinFrameCount  = DeriveInternalMinFrameCount();
+            Settings.MaxFrameCount  = DeriveInternalMaxFrameCount();
         }
+
+        private static int NormalizeBucketSize(int value) => value == 3 ? 3 : 2;
+        private static int DeriveInternalTolerance(int bucketSize) => bucketSize;
+        private static int DeriveInternalPreBucketLeadC() => 2;
+        private static int DeriveInternalMinFrameCount() => 20;
+        private static int DeriveInternalMaxFrameCount() => 50;
 
         public async Task SendDiscordAsync(string msg) {
             var url = DiscordWebhookUrl;
@@ -96,64 +153,94 @@ namespace NINA.Plugin.SeeDark {
             } catch { return ""; }
         }
 
+        public FilterInfo? GetDarkFilter() {
+            try {
+                var filters = ProfileService.ActiveProfile.FilterWheelSettings.FilterWheelFilters;
+                if (filters == null) return null;
+                var exact = filters.FirstOrDefault(f => string.Equals(f.Name, "DARK", StringComparison.OrdinalIgnoreCase));
+                if (exact != null) return exact;
+                return filters.FirstOrDefault(f => f.Name != null && f.Name.IndexOf("DARK", StringComparison.OrdinalIgnoreCase) >= 0);
+            } catch {
+                return null;
+            }
+        }
+
         private double _targetExposure = 20.0;
         public double TargetExposure {
             get => _targetExposure;
-            set { _targetExposure = value; RaisePropertyChanged(); }
+            set { _targetExposure = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private int _maxAgeDays = 180;
         public int MaxAgeDays {
             get => _maxAgeDays;
-            set { _maxAgeDays = value; RaisePropertyChanged(); }
+            set { _maxAgeDays = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private int _gain = 200;
         public int Gain {
             get => _gain;
-            set { _gain = value; RaisePropertyChanged(); }
+            set { _gain = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private string _rawDarksFolder = "";
         public string RawDarksFolder {
             get => _rawDarksFolder;
-            set { _rawDarksFolder = value; RaisePropertyChanged(); }
+            set { _rawDarksFolder = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private string _masterLibraryFolder = "";
         public string MasterLibraryFolder {
             get => _masterLibraryFolder;
-            set { _masterLibraryFolder = value; RaisePropertyChanged(); }
+            set { _masterLibraryFolder = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private int _minFrameCount = 20;
         public int MinFrameCount {
             get => _minFrameCount;
-            set { _minFrameCount = value; RaisePropertyChanged(); }
+            set { _minFrameCount = DeriveInternalMinFrameCount(); RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private int _maxFrameCount = 50;
+        public int MaxFrameCount {
+            get => _maxFrameCount;
+            set { _maxFrameCount = DeriveInternalMaxFrameCount(); RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private bool _enableLifecycleManagement = false;
+        public bool EnableLifecycleManagement {
+            get => _enableLifecycleManagement;
+            set { _enableLifecycleManagement = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private bool _deleteArchivedRawsAfterMaxAge = false;
+        public bool DeleteArchivedRawsAfterMaxAge {
+            get => _deleteArchivedRawsAfterMaxAge;
+            set { _deleteArchivedRawsAfterMaxAge = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private string _discordWebhookUrl = "";
         public string DiscordWebhookUrl {
             get => _discordWebhookUrl;
-            set { _discordWebhookUrl = value; RaisePropertyChanged(); }
+            set { _discordWebhookUrl = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private int _tempBucketSize = 2;
         public int TempBucketSize {
             get => _tempBucketSize;
-            set { _tempBucketSize = 2; RaisePropertyChanged(); }
+            set { _tempBucketSize = NormalizeBucketSize(value); RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private int _stackTolerance = 2;
         public int StackTolerance {
             get => _stackTolerance;
-            set { _stackTolerance = Math.Clamp(value, 1, 2); RaisePropertyChanged(); }
+            set { _stackTolerance = Math.Clamp(value, 1, 2); RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
-        private int _preBucketLeadC = 1;
+        private int _preBucketLeadC = 2;
         public int PreBucketLeadC {
             get => _preBucketLeadC;
-            set { _preBucketLeadC = Math.Clamp(value, 1, 3); RaisePropertyChanged(); }
+            set { _preBucketLeadC = DeriveInternalPreBucketLeadC(); RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
     }
 }
