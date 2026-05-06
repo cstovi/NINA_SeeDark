@@ -99,7 +99,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             const int targetFrames = 30;
             const int minFrames = 20;
             const int maxAttemptsDefault = 50;
-            const int maxAttemptsNearTarget = 70;
+            const int maxAttemptsNearTarget = 60;
             const int nearTargetFloor = 25;
             const int maxConsecutiveBucketMisses = 3;
 
