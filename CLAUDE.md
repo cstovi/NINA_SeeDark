@@ -29,6 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - `end = bucket + halfStep` (exclusive)
 7. `ExecutionMode=Manual`: executes children only if no matching master exists and sensor temp is inside start window
 8. `ExecutionMode=Auto`: runs internal dark capture loop (DARK filter/type, gain/exposure from container, offset default, target 30 accepted frames, max 50 capture attempts raised to 60 when accepted count ≥25 toward target, min 20 to stack, temperature drift guard)
+9. **Auto only — proactive next bucket:** If the **current** bucket already has an acceptable master but the **next warmer** bucket does not, start Auto capture immediately (no start-window wait), target the next warmer bucket, and take **warmup** exposures while still colder (not counted toward target / no drift stop) until the sensor reaches the target band.
 
 ## Current Session State (May 2026)
 

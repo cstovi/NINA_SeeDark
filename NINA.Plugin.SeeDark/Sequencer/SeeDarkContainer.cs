@@ -111,19 +111,26 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
 
             int bucketStepC = Math.Max(1, _plugin.Settings.TempBucketSize);
-            int targetBucket = TemperatureBucketing.ToBucket(startTemp, bucketStepC);
+            int currentBucket = TemperatureBucketing.ToBucket(startTemp, bucketStepC);
+            var masters = ScanMasterFolder();
+            var masterCutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
+            var scopeId = _plugin.GetScopeId();
+
+            bool lackCurrent = masters.Length == 0 || LacksAcceptableMaster(currentBucket, masters, masterCutoff, scopeId);
+            bool lackNextWarmer = masters.Length > 0 && LacksAcceptableMaster(currentBucket + bucketStepC, masters, masterCutoff, scopeId);
+            bool proactiveWarmup = ExecutionMode == DarkExecutionMode.Auto && masters.Length > 0 && !lackCurrent && lackNextWarmer;
+            int targetBucket = proactiveWarmup ? currentBucket + bucketStepC : currentBucket;
+
             var darkFilter = _plugin.GetDarkFilter();
             if (darkFilter == null) {
                 Log("⚠️ Auto mode could not find a DARK filter definition. Configure a DARK filter or use Manual mode.");
                 return;
             }
 
+            if (proactiveWarmup)
+                Log($"🌡️ Proactive Auto: warming toward {targetBucket}°C bucket (current {currentBucket}°C already has a master; capturing until temp reaches target band).");
             Log($"🤖 Auto mode starting dark capture: target {targetFrames}, min {minFrames}, max attempts {maxAttemptsDefault} ({maxAttemptsNearTarget} if accepted ≥{nearTargetFloor} toward target), target bucket {targetBucket}°C");
             Log("🔁 If the sensor drifts to another temperature bucket, capture continues when that bucket also has no acceptable master (same exposure, gain, scope, max age).");
-
-            var masters = ScanMasterFolder();
-            var masterCutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
-            var scopeId = _plugin.GetScopeId();
 
             try {
                 await _plugin.FilterWheelMediator.ChangeFilter(darkFilter, token, progress);
@@ -171,6 +178,12 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 }
 
                 int frameBucket = TemperatureBucketing.ToBucket(frameTemp, bucketStepC);
+                if (proactiveWarmup && frameBucket < targetBucket) {
+                    consecutiveBucketMisses = 0;
+                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — warming toward {targetBucket}°C (frames not counted until target band)", discordVerboseOnly: true);
+                    ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
+                    continue;
+                }
                 if (frameBucket == targetBucket) {
                     goodFrames++;
                     lifetimeAccepted++;
@@ -234,15 +247,26 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             var masters = ScanMasterFolder();
             var cutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
+            bool lackCurrent = masters.Length == 0 || LacksAcceptableMaster(bucket, masters, cutoff, scopeId);
+            int nextWarmerBucket = bucket + bucketStepC;
+            bool lackNextWarmer = masters.Length > 0 && LacksAcceptableMaster(nextWarmerBucket, masters, cutoff, scopeId);
+            bool proactiveAutoNext = ExecutionMode == DarkExecutionMode.Auto && masters.Length > 0 && !lackCurrent && lackNextWarmer;
+
             bool needsDarks;
             if (masters.Length == 0) {
                 Log("🌑 No masters found in master library folder — darks needed!");
                 needsDarks = true;
+            } else if (proactiveAutoNext) {
+                Log($"🌑 Proactive Auto: have master for {bucket}°C bucket but not for next warmer {nextWarmerBucket}°C — starting capture early before temp reaches next band.");
+                needsDarks = true;
             } else {
-                needsDarks = LacksAcceptableMaster(bucket, masters, cutoff, scopeId);
+                needsDarks = lackCurrent;
                 Log(needsDarks ? "🌑 No matching dark found — darks needed!" : "✅ Matching dark exists — skipping");
             }
             if (!needsDarks) return false;
+
+            if (proactiveAutoNext)
+                return true;
 
             double halfStep = bucketStepC / 2.0;
             double startThreshold = (bucket - halfStep) - lead;
@@ -251,7 +275,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             const double startBelowNominalC = 0.5;
             double endThresholdExclusive = Math.Min(bucket + halfStep, bucket - startBelowNominalC);
             bool inWindow = temp >= startThreshold && temp < endThresholdExclusive;
-            int nextWarmerBucket = bucket + bucketStepC;
             bool autoBypassHighInBand = !inWindow &&
                 ExecutionMode == DarkExecutionMode.Auto &&
                 temp >= startThreshold &&
