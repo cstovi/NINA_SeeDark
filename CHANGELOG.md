@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.5.0 - 2026-05-06
+
+- Reordered options so `Default mode (new containers)` now appears below the age/lifecycle controls.
+- Improved option helper text readability with concise wording and wrapping in the right-hand description column.
+
 ## v1.4.0 - 2026-05-06
 
 - Added a user-facing `README.md` for GitHub with setup, mode behavior, matching model, lifecycle notes, logging paths, and release links.
