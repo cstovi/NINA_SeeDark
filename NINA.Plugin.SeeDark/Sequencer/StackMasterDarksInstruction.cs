@@ -155,6 +155,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 }
 
                 var pixelArrays = new List<float[]>(selectedFrames.Count);
+                var loadedFrames = new List<FrameInfo>(selectedFrames.Count);
                 int width = 0, height = 0;
                 foreach (var frame in selectedFrames) {
                     token.ThrowIfCancellationRequested();
@@ -163,6 +164,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     if (width == 0) { width = w; height = h; }
                     else if (w != width || h != height) { Log($"⚠️ Skipped mismatched frame: {frame.Path}"); continue; }
                     pixelArrays.Add(pixels);
+                    loadedFrames.Add(frame);
                 }
 
                 if (pixelArrays.Count < minFrameCount) {
@@ -172,6 +174,46 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 Log($"🔧 Stacking {pixelArrays.Count} frames ({width}×{height})...");
                 var median = ComputeMedian(pixelArrays);
+                var frameStats = pixelArrays.Select(ComputeMeanStd).ToList();
+                var medianOfMeans = Median(frameStats.Select(s => s.mean));
+                var brightnessThreshold = medianOfMeans * 1.10;
+                var brightOutliers = frameStats
+                    .Select((stats, index) => new { stats.mean, index })
+                    .Where(x => x.mean > brightnessThreshold)
+                    .Select(x => Path.GetFileName(loadedFrames[x.index].Path))
+                    .Take(5)
+                    .ToList();
+                if (brightOutliers.Count > 0) {
+                    Log($"⚠️ Potential light leak: {brightOutliers.Count} unusually bright frame(s) above {brightnessThreshold:F2} mean ADU (showing up to 5)");
+                    foreach (var name in brightOutliers) Log($"   • {name}");
+                }
+                var spatialMetrics = pixelArrays.Select(p => ComputeSpatialLeakMetric(p, width, height)).ToList();
+                var baselineCornerToCenterRatio = Median(spatialMetrics.Select(m => m.cornerToCenterRatio));
+                int spatialMinFlagCount = Math.Max(3, (int)Math.Ceiling(pixelArrays.Count * 0.10));
+                var spatialFlags = spatialMetrics
+                    .Select((metric, index) => new { metric, index })
+                    .Where(x =>
+                        x.metric.cornerToCenterRatio > baselineCornerToCenterRatio * 1.08 &&
+                        x.metric.cornerMinusCenter > 10.0)
+                    .ToList();
+                if (spatialFlags.Count >= spatialMinFlagCount) {
+                    var sampleNames = spatialFlags
+                        .Take(3)
+                        .Select(x => Path.GetFileName(loadedFrames[x.index].Path))
+                        .ToList();
+                    Log(
+                        $"⚠️ Spatial leak check: {spatialFlags.Count}/{pixelArrays.Count} frame(s) show elevated corner glow " +
+                        $"(baseline corner/center ratio {baselineCornerToCenterRatio:F3}; trigger >= {baselineCornerToCenterRatio * 1.08:F3}).");
+                    if (sampleNames.Count > 0)
+                        Log($"⚠️ Spatial leak examples: {string.Join(", ", sampleNames)}");
+                }
+                var representativeSingleStd = Median(frameStats.Select(s => s.stdDev));
+                var masterStats = ComputeMeanStd(median);
+                Log($"📊 Noise stats: representative single-frame σ={representativeSingleStd:F2}, master σ={masterStats.stdDev:F2}");
+                if (masterStats.stdDev >= representativeSingleStd)
+                    Log("⚠️ Master noise is not lower than representative single-frame noise; inspect contributing raws.");
+                else
+                    Log("✅ Noise reduction check passed (master noise lower than representative single-frame noise).");
 
                 var prefix = $"master_dark_{key.Exposure:F0}s_{key.TempBucket}c_{key.ScopeId}_";
                 foreach (var old in Directory.GetFiles(masterFolder, prefix + "*.fit*")) {
@@ -311,7 +353,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 if (string.IsNullOrEmpty(exptimeStr) || string.IsNullOrEmpty(tempStr) || string.IsNullOrEmpty(instrume))
                     return null;
 
-                var date = DateTime.Parse(dateStr ?? DateTime.Now.ToString(), CultureInfo.InvariantCulture);
+                if (string.IsNullOrWhiteSpace(dateStr)) return null;
+                if (!DateTime.TryParse(dateStr, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var date)) {
+                    Log($"⚠️ Skipped frame with invalid DATE-LOC/DATE-OBS: {Path.GetFileName(path)}");
+                    return null;
+                }
                 if (date.Hour < 12) date = date.AddDays(-1);
 
                 double exposure = double.Parse(exptimeStr, CultureInfo.InvariantCulture);
@@ -376,6 +422,61 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     : (buf[n / 2 - 1] + buf[n / 2]) * 0.5f;
             }
             return result;
+        }
+
+        private static double Median(IEnumerable<double> values) {
+            var sorted = values.OrderBy(v => v).ToArray();
+            if (sorted.Length == 0) return 0.0;
+            return sorted.Length % 2 == 1
+                ? sorted[sorted.Length / 2]
+                : (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) * 0.5;
+        }
+
+        private static (double mean, double stdDev) ComputeMeanStd(float[] values) {
+            if (values.Length == 0) return (0.0, 0.0);
+            double sum = 0.0;
+            double sumSq = 0.0;
+            foreach (var value in values) {
+                sum += value;
+                sumSq += value * value;
+            }
+            double mean = sum / values.Length;
+            double variance = Math.Max(0.0, (sumSq / values.Length) - (mean * mean));
+            return (mean, Math.Sqrt(variance));
+        }
+
+        private static (double cornerToCenterRatio, double cornerMinusCenter) ComputeSpatialLeakMetric(float[] pixels, int width, int height) {
+            if (pixels.Length == 0 || width <= 0 || height <= 0) return (1.0, 0.0);
+            int regionW = Math.Max(16, width / 6);
+            int regionH = Math.Max(16, height / 6);
+            regionW = Math.Min(regionW, width);
+            regionH = Math.Min(regionH, height);
+
+            double tl = RegionMean(pixels, width, 0, 0, regionW, regionH);
+            double tr = RegionMean(pixels, width, Math.Max(0, width - regionW), 0, regionW, regionH);
+            double bl = RegionMean(pixels, width, 0, Math.Max(0, height - regionH), regionW, regionH);
+            double br = RegionMean(pixels, width, Math.Max(0, width - regionW), Math.Max(0, height - regionH), regionW, regionH);
+            double cornerMean = (tl + tr + bl + br) * 0.25;
+
+            int centerX = Math.Max(0, (width - regionW) / 2);
+            int centerY = Math.Max(0, (height - regionH) / 2);
+            double centerMean = RegionMean(pixels, width, centerX, centerY, regionW, regionH);
+            if (centerMean <= 0.0) return (1.0, cornerMean - centerMean);
+
+            return (cornerMean / centerMean, cornerMean - centerMean);
+        }
+
+        private static double RegionMean(float[] pixels, int width, int startX, int startY, int regionW, int regionH) {
+            double sum = 0.0;
+            int count = 0;
+            for (int y = startY; y < startY + regionH; y++) {
+                int rowOffset = y * width;
+                for (int x = startX; x < startX + regionW; x++) {
+                    sum += pixels[rowOffset + x];
+                    count++;
+                }
+            }
+            return count > 0 ? sum / count : 0.0;
         }
 
         private static void WriteFitsFloat(string path, float[] pixels, int width, int height,
@@ -469,7 +570,17 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
                 File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}{Environment.NewLine}");
             } catch { }
-            _ = _plugin.SendDiscordAsync(msg);
+            if (ShouldSendToDiscord(msg))
+                _ = _plugin.SendDiscordAsync(msg);
+        }
+
+        private static bool ShouldSendToDiscord(string msg) {
+            if (string.IsNullOrWhiteSpace(msg)) return false;
+            if (msg.StartsWith("❌", StringComparison.Ordinal)) return true;
+            if (msg.StartsWith("⚠️", StringComparison.Ordinal)) return true;
+            if (!msg.StartsWith("✅", StringComparison.Ordinal)) return false;
+            return msg.Contains("Successfully rebuilt", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("Stack Master Darks complete", StringComparison.OrdinalIgnoreCase);
         }
 
         private record FrameInfo(
