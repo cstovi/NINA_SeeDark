@@ -15,10 +15,12 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
+  <!-- ContinueOnError: NINA locks the plugin DLL while running; compile still succeeds and OutputPath DLL is fresh. -->
   <Target Name="CopyToNina" AfterTargets="Build">
     <Copy SourceFiles="$(OutputPath)NINA.Plugin.SeeDark.dll"
           DestinationFolder="$(LOCALAPPDATA)\NINA\Plugins\3.0.0\SeeDark"
-          SkipUnchangedFiles="true" />
+          SkipUnchangedFiles="true"
+          ContinueOnError="true" />
   </Target>
 
 </Project>
