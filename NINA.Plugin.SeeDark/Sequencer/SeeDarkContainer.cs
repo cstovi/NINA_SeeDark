@@ -98,7 +98,9 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         private async Task ExecuteAutoCaptureCore(IProgress<ApplicationStatus> progress, CancellationToken token) {
             const int targetFrames = 30;
             const int minFrames = 20;
-            const int maxFrames = 50;
+            const int maxAttemptsDefault = 50;
+            const int maxAttemptsNearTarget = 70;
+            const int nearTargetFloor = 25;
             const int maxConsecutiveBucketMisses = 3;
 
             double startTemp = GetSensorTempFromMediator();
@@ -116,7 +118,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 return;
             }
 
-            Log($"🤖 Auto mode starting dark capture: target {targetFrames}, min {minFrames}, max {maxFrames}, target bucket {targetBucket}°C");
+            Log($"🤖 Auto mode starting dark capture: target {targetFrames}, min {minFrames}, max attempts {maxAttemptsDefault} ({maxAttemptsNearTarget} if accepted ≥{nearTargetFloor} toward target), target bucket {targetBucket}°C");
             Log("🔁 If the sensor drifts to another temperature bucket, capture continues when that bucket also has no acceptable master (same exposure, gain, scope, max age).");
 
             var masters = ScanMasterFolder();
@@ -138,7 +140,10 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
 
-            while (!token.IsCancellationRequested && attempts < maxFrames && goodFrames < targetFrames) {
+            int AttemptCap(int good) =>
+                good >= nearTargetFloor && good < targetFrames ? maxAttemptsNearTarget : maxAttemptsDefault;
+
+            while (!token.IsCancellationRequested && attempts < AttemptCap(goodFrames) && goodFrames < targetFrames) {
                 attempts++;
                 var capture = new CaptureSequence {
                     ExposureTime = TargetExposure,
