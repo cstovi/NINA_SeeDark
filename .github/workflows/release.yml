@@ -1,0 +1,38 @@
+# Cut a release by pushing an annotated tag: git tag v1.6.0 && git push origin v1.6.0
+# (Version / CHANGELOG should already match in the repo per release process.)
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore "NINA.Plugin.SeeDark/NINA.Plugin.SeeDark.csproj"
+
+      - name: Build
+        run: dotnet build "NINA.Plugin.SeeDark/NINA.Plugin.SeeDark.csproj" --configuration Release --no-restore
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: NINA.Plugin.SeeDark/bin/Release/net8.0-windows/NINA.Plugin.SeeDark.dll
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
