@@ -15,7 +15,7 @@
     <DataTemplate DataType="{x:Type seq:SeeDarkContainer}">
         <nina:SequenceContainerView ShowDetails="{Binding ShowManualChildren}">
             <nina:SequenceContainerView.SequenceContainerContent>
-                <StackPanel Margin="0,6,0,12">
+                <StackPanel Margin="0,6,0,6">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Exposure (s):" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <TextBox Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged, FallbackValue=20, TargetNullValue=20}"
