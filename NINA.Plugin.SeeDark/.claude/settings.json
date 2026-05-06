@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(git log *)",
+      "PowerShell(git status *)",
+      "PowerShell(git ls-files *)"
+    ]
+  }
+}
