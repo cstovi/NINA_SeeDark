@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.4.0 - 2026-05-06
+
+- Added a user-facing `README.md` for GitHub with setup, mode behavior, matching model, lifecycle notes, logging paths, and release links.
+- Kept `CLAUDE.md` as implementation/agent guidance and clarified user-facing docs should live in README.
+
 ## v1.3.0 - 2026-05-06
 
 - Set default mode for new `SeeDark Dark Manager` containers to `Auto`.

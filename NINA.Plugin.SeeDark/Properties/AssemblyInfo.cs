@@ -12,8 +12,8 @@ using System.Windows;
 When you've accumulated enough raw darks, optionally add a Stack SeeDark Master Darks instruction to median-stack them into master files automatically. Set the master library folder at the top, and configure the raw darks folder and minimum frame count in the Dark Stacker section above.")]
 [assembly: AssemblyCompany("Carl Stovell")]
 [assembly: AssemblyProduct("NINA.Plugin.SeeDark")]
-[assembly: AssemblyVersion("1.3.0.0")]
-[assembly: AssemblyFileVersion("1.3.0.0")]
+[assembly: AssemblyVersion("1.4.0.0")]
+[assembly: AssemblyFileVersion("1.4.0.0")]
 [assembly: Guid("A5E7F3C1-2D4B-4A8E-9F1C-3B6D7E8A0F2C")]
 [assembly: ThemeInfo(
     ResourceDictionaryLocation.None,
