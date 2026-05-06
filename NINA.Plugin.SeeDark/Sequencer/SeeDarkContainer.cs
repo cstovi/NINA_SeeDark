@@ -109,6 +109,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
 
             Log($"🤖 Auto mode starting dark capture: target {targetFrames}, min {minFrames}, max {maxFrames}, target bucket {targetBucket}°C");
+            Log("🔁 If the sensor drifts to another temperature bucket, capture continues when that bucket also has no acceptable master (same exposure, gain, scope, max age).");
+
+            var masters = ScanMasterFolder();
+            var masterCutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
+            var scopeId = _plugin.GetScopeId();
 
             try {
                 await _plugin.FilterWheelMediator.ChangeFilter(darkFilter, token, progress);
@@ -150,6 +155,12 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     goodFrames++;
                     consecutiveBucketMisses = 0;
                     Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target) — accepted ({goodFrames}/{targetFrames})");
+                } else if (LacksAcceptableMaster(frameBucket, masters, masterCutoff, scopeId)) {
+                    int previousTarget = targetBucket;
+                    targetBucket = frameBucket;
+                    goodFrames = 1;
+                    consecutiveBucketMisses = 0;
+                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — retargeting from {previousTarget}°C (no acceptable master for this bucket); counting frame toward new target ({goodFrames}/{targetFrames})");
                 } else {
                     consecutiveBucketMisses++;
                     Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target {targetBucket}°C) — drift count {consecutiveBucketMisses}/{maxConsecutiveBucketMisses}");
@@ -193,12 +204,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 Log("🌑 No masters found in master library folder — darks needed!");
                 needsDarks = true;
             } else {
-                needsDarks = !masters.Any(r =>
-                    r.Temp == bucket &&
-                    Math.Abs(r.Exposure - TargetExposure) < 0.5 &&
-                    r.Gain == Gain &&
-                    r.Scope == scopeId &&
-                    r.DateCreated >= cutoff);
+                needsDarks = LacksAcceptableMaster(bucket, masters, cutoff, scopeId);
                 Log(needsDarks ? "🌑 No matching dark found — darks needed!" : "✅ Matching dark exists — skipping");
             }
             if (!needsDarks) return false;
@@ -214,6 +220,20 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             Log($"🌑 Missing dark for {bucket}°C bucket and sensor {temp:F1}°C is inside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C — darks needed!");
             return true;
+        }
+
+        /// <summary>True when no master in the library matches this bucket, exposure, gain, scope, and age cutoff.</summary>
+        private bool LacksAcceptableMaster(int bucket, MasterRecord[] masters, DateTime masterCutoff, string scopeId) {
+            if (masters.Length == 0)
+                return true;
+            if (string.IsNullOrEmpty(scopeId))
+                return true;
+            return !masters.Any(r =>
+                r.Temp == bucket &&
+                Math.Abs(r.Exposure - TargetExposure) < 0.5 &&
+                r.Gain == Gain &&
+                r.Scope == scopeId &&
+                r.DateCreated >= masterCutoff);
         }
 
         private double GetSensorTempFromMediator() {

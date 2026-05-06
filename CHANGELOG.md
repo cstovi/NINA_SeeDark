@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.6.0 - 2026-05-06
+
+- Auto dark capture **retargets** when the sensor moves to another temperature bucket that also has no acceptable master (same exposure, gain, scope, and max-age rules as matching). The accepted-frame counter resets for the new bucket so stacking groups stay coherent; drift still stops the run when the new bucket already has a master.
+
 ## v1.5.0 - 2026-05-06
 
 - Reordered options so `Default mode (new containers)` now appears below the age/lifecycle controls.
