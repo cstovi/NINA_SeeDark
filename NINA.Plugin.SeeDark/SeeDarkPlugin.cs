@@ -57,6 +57,7 @@ namespace NINA.Plugin.SeeDark {
             EnableLifecycleManagement = Settings.EnableLifecycleManagement;
             DeleteArchivedRawsAfterMaxAge = Settings.DeleteArchivedRawsAfterMaxAge;
             DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
+            DiscordVerbosePerFrame = Settings.DiscordVerbosePerFrame;
             TempBucketSize        = Settings.TempBucketSize;
             StackTolerance        = Settings.StackTolerance;
             PreBucketLeadC        = Settings.PreBucketLeadC;
@@ -109,6 +110,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.EnableLifecycleManagement = _enableLifecycleManagement;
                 Settings.DeleteArchivedRawsAfterMaxAge = _deleteArchivedRawsAfterMaxAge;
                 Settings.DiscordWebhookUrl   = _discordWebhookUrl;
+                Settings.DiscordVerbosePerFrame = _discordVerbosePerFrame;
                 Settings.TempBucketSize      = _tempBucketSize;
                 Settings.StackTolerance      = _stackTolerance;
                 Settings.PreBucketLeadC      = _preBucketLeadC;
@@ -234,6 +236,12 @@ namespace NINA.Plugin.SeeDark {
         public string DiscordWebhookUrl {
             get => _discordWebhookUrl;
             set { _discordWebhookUrl = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private bool _discordVerbosePerFrame = false;
+        public bool DiscordVerbosePerFrame {
+            get => _discordVerbosePerFrame;
+            set { _discordVerbosePerFrame = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private int _tempBucketSize = 2;

@@ -23,27 +23,7 @@
                         <TextBlock Text="Gain:" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <TextBox Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged, FallbackValue=200, TargetNullValue=200}"
                                  Width="50" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                        <TextBlock Text="Mode:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                        <ComboBox SelectedValue="{Binding ExecutionMode}" SelectedValuePath="Tag" Width="90" VerticalAlignment="Center">
-                            <ComboBoxItem Content="Manual" Tag="{x:Static seq:DarkExecutionMode.Manual}"/>
-                            <ComboBoxItem Content="Auto" Tag="{x:Static seq:DarkExecutionMode.Auto}"/>
-                        </ComboBox>
                     </StackPanel>
-                    <TextBlock Text="Hint: These check values must match the dark capture settings in child instructions."
-                               Foreground="#888" FontSize="11" Margin="0,6,0,0"/>
-                    <TextBlock Text="Auto mode runs internal dark capture and ignores child instructions."
-                               Foreground="#d08c00" FontSize="11" Margin="0,4,0,0">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ShowManualChildren}" Value="False">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
                 </StackPanel>
             </nina:SequenceContainerView.SequenceContainerContent>
         </nina:SequenceContainerView>
@@ -58,14 +38,13 @@
     <DataTemplate x:Key="SeeDark_Options" DataType="{x:Type local:SeeDarkPlugin}">
         <StackPanel Margin="8">
 
-            <TextBlock Text="Library" FontWeight="Bold" Margin="0,0,0,6"/>
             <Grid Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="180"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Master library folder:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock Grid.Column="0" Text="Master dark library folder:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <TextBox Grid.Column="1" Text="{Binding MasterLibraryFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
                 <Button Grid.Column="2" Content="..." Width="28" Margin="8,0,0,0" VerticalAlignment="Center" Click="BrowseMasterLibraryFolder_Click"/>
             </Grid>
@@ -84,16 +63,14 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Default exposure (s):" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="seeds new containers" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Default gain:" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="seeds new containers (S30 = 200)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="e.g. S30 = 200" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,4" FontSize="11"/>
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Temp bucket size (°C):" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <ComboBox Grid.Row="2" Grid.Column="1" SelectedValue="{Binding TempBucketSize}"
@@ -101,12 +78,13 @@
                     <ComboBoxItem Content="2"/>
                     <ComboBoxItem Content="3"/>
                 </ComboBox>
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="Choose 2C or 3C non-overlapping bucket bands for matching and stacking."
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="One master dark for every 2 or 3 degrees."
                            Foreground="#888" VerticalAlignment="Top" Margin="8,0,0,4" FontSize="11" TextWrapping="Wrap"/>
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Max master age (days):" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding MaxAgeDays, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
-                <TextBlock Grid.Row="3" Grid.Column="2" Text="default 180 (6 months)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
+                <TextBlock Grid.Row="3" Grid.Column="2" Text="Days before a master should be replaceable."
+                           Foreground="#888" VerticalAlignment="Top" Margin="8,0,0,0" FontSize="11" TextWrapping="Wrap"/>
 
                 <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding EnableLifecycleManagement, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"/>
                 <TextBlock Grid.Row="4" Grid.Column="2" Text="Enable lifecycle management: archive used raws and allow archive-based rebuilds."
@@ -116,18 +94,9 @@
                 <TextBlock Grid.Row="5" Grid.Column="2" Text="Delete archived raws older than Max master age (advanced, irreversible)."
                            Foreground="#888" VerticalAlignment="Top" Margin="8,4,0,0" FontSize="11" TextWrapping="Wrap"/>
 
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="Default mode (new containers):" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ComboBox Grid.Row="6" Grid.Column="1" SelectedValue="{Binding DefaultExecutionMode}"
-                          SelectedValuePath="Tag" VerticalAlignment="Center">
-                    <ComboBoxItem Content="Auto" Tag="{x:Static seq:DarkExecutionMode.Auto}"/>
-                    <ComboBoxItem Content="Manual" Tag="{x:Static seq:DarkExecutionMode.Manual}"/>
-                </ComboBox>
-                <TextBlock Grid.Row="6" Grid.Column="2" Text="Auto captures darks internally. Manual runs child instructions. Applies to new containers."
-                           Foreground="#888" VerticalAlignment="Top" Margin="8,0,0,0" FontSize="11" TextWrapping="Wrap"/>
-
             </Grid>
 
-            <TextBlock Text="Tip: Use a dedicated master library folder for SeeDark if you want to keep pre-plugin masters untouched."
+            <TextBlock Text="Tip: Use a dedicated master dark library folder for SeeDark if you want to keep pre-plugin masters untouched."
                        Foreground="#888" FontSize="11" Margin="0,4,0,0"/>
 
             <TextBlock Text="Dark Stacker" FontWeight="Bold" Margin="0,16,0,6"/>
@@ -152,8 +121,18 @@
                     <ColumnDefinition Width="180"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Discord webhook URL:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBox Grid.Column="1" Text="{Binding DiscordWebhookUrl, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Discord webhook URL:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding DiscordWebhookUrl, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0">
+                    <CheckBox IsChecked="{Binding DiscordVerbosePerFrame, UpdateSourceTrigger=PropertyChanged}"
+                              Content="Verbose: mirror per-frame auto dark lines to Discord"/>
+                    <TextBlock Text="Very chatty during runs. A dedicated webhook or channel is recommended."
+                               Foreground="#888" FontSize="11" Margin="22,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
             </Grid>
 
         </StackPanel>

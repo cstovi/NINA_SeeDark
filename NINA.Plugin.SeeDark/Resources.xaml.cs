@@ -12,7 +12,7 @@ namespace NINA.Plugin.SeeDark {
 
         private void BrowseMasterLibraryFolder_Click(object sender, RoutedEventArgs e) {
             if (sender is not FrameworkElement element || element.DataContext is not SeeDarkPlugin plugin) return;
-            var selected = BrowseForFolder(plugin.MasterLibraryFolder, "Select master library folder");
+            var selected = BrowseForFolder(plugin.MasterLibraryFolder, "Select master dark library folder");
             if (!string.IsNullOrWhiteSpace(selected)) {
                 plugin.MasterLibraryFolder = selected;
             }

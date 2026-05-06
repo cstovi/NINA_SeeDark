@@ -19,6 +19,8 @@ namespace NINA.Plugin.SeeDark {
         public bool EnableLifecycleManagement { get; set; } = false;
         public bool DeleteArchivedRawsAfterMaxAge { get; set; } = false;
         public string DiscordWebhookUrl { get; set; } = "";
+        /// <summary>When true, per-frame auto dark capture log lines are mirrored to Discord (noisy).</summary>
+        public bool DiscordVerbosePerFrame { get; set; } = false;
         public int TempBucketSize { get; set; } = 2;
         public int StackTolerance { get; set; } = 2;
         public int PreBucketLeadC { get; set; } = 2;
@@ -39,8 +41,6 @@ namespace NINA.Plugin.SeeDark {
 
             try {
                 Directory.CreateDirectory(DataFolder);
-                Directory.CreateDirectory(s.RawDarksFolder);
-                Directory.CreateDirectory(s.MasterLibraryFolder);
             } catch { }
 
             return s;

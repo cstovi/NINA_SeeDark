@@ -45,7 +45,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             set { _gain = value; RaisePropertyChanged(); }
         }
 
-        private DarkExecutionMode _executionMode = DarkExecutionMode.Manual;
+        private DarkExecutionMode _executionMode = DarkExecutionMode.Auto;
         [JsonProperty]
         public DarkExecutionMode ExecutionMode {
             get => _executionMode;
@@ -88,6 +88,14 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         }
 
         private async Task ExecuteAutoCapture(IProgress<ApplicationStatus> progress, CancellationToken token) {
+            try {
+                await ExecuteAutoCaptureCore(progress, token);
+            } finally {
+                progress?.Report(new ApplicationStatus());
+            }
+        }
+
+        private async Task ExecuteAutoCaptureCore(IProgress<ApplicationStatus> progress, CancellationToken token) {
             const int targetFrames = 30;
             const int minFrames = 20;
             const int maxFrames = 50;
@@ -124,8 +132,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
 
             int goodFrames = 0;
+            int lifetimeAccepted = 0;
             int attempts = 0;
             int consecutiveBucketMisses = 0;
+
+            ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
 
             while (!token.IsCancellationRequested && attempts < maxFrames && goodFrames < targetFrames) {
                 attempts++;
@@ -135,6 +146,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     Offset = -1,
                     ImageType = CaptureSequence.ImageTypes.DARK,
                 };
+
+                ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
 
                 try {
                     await _plugin.ImagingMediator.CaptureImage(capture, token, progress);
@@ -147,23 +160,30 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 if (double.IsNaN(frameTemp)) {
                     Log($"⚠️ Frame {attempts}: temperature unavailable; counting frame toward target.");
                     goodFrames++;
+                    lifetimeAccepted++;
+                    ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
                     continue;
                 }
 
                 int frameBucket = TemperatureBucketing.ToBucket(frameTemp, bucketStepC);
                 if (frameBucket == targetBucket) {
                     goodFrames++;
+                    lifetimeAccepted++;
                     consecutiveBucketMisses = 0;
-                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target) — accepted ({goodFrames}/{targetFrames})");
+                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target) — accepted ({goodFrames}/{targetFrames})", discordVerboseOnly: true);
+                    ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
                 } else if (LacksAcceptableMaster(frameBucket, masters, masterCutoff, scopeId)) {
                     int previousTarget = targetBucket;
                     targetBucket = frameBucket;
                     goodFrames = 1;
+                    lifetimeAccepted++;
                     consecutiveBucketMisses = 0;
-                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — retargeting from {previousTarget}°C (no acceptable master for this bucket); counting frame toward new target ({goodFrames}/{targetFrames})");
+                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — drifted out of {previousTarget}°C target band; bucket {frameBucket}°C also has no acceptable master in the library — retargeting capture here ({goodFrames}/{targetFrames}).", discordVerboseOnly: true);
+                    ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
                 } else {
                     consecutiveBucketMisses++;
-                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target {targetBucket}°C) — drift count {consecutiveBucketMisses}/{maxConsecutiveBucketMisses}");
+                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target {targetBucket}°C) — drift count {consecutiveBucketMisses}/{maxConsecutiveBucketMisses}", discordVerboseOnly: true);
+                    ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
                     if (consecutiveBucketMisses >= maxConsecutiveBucketMisses) {
                         Log("⏹️ Auto capture stopping early due to sustained bucket drift.");
                         break;
@@ -172,10 +192,20 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
 
             if (goodFrames >= minFrames) {
-                Log($"✅ Auto dark capture complete with {goodFrames} accepted frame(s).");
+                Log($"✅ Auto dark capture complete with {goodFrames} accepted frame(s) for bucket {targetBucket}°C ({lifetimeAccepted} accepted in total this run across bucket(s); raws saved).");
             } else {
-                Log($"⚠️ Auto dark capture ended with only {goodFrames} accepted frame(s); need at least {minFrames}. Run again when temperature is stable.");
+                Log($"⚠️ Auto dark capture stopped after {attempts} attempt(s) with {goodFrames} accepted for the final bucket {targetBucket}°C (need {minFrames}+ there to stack that group). {lifetimeAccepted} frame(s) accepted in total this run across bucket(s) — earlier buckets have their own partial sets on disk. Run again when temperature is stable.");
             }
+        }
+
+        private static void ReportAutoDarkCaptureProgress(IProgress<ApplicationStatus>? progress, int accepted, int target) {
+            progress?.Report(new ApplicationStatus {
+                Source = "SeeDark",
+                Status = $"Auto darks {accepted}/{target}",
+                Progress = accepted,
+                MaxProgress = Math.Max(1, target),
+                ProgressType = ApplicationStatus.StatusProgressType.ValueOfMaxValue,
+            });
         }
 
         private bool NeedsDarks() {
@@ -211,11 +241,26 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             double halfStep = bucketStepC / 2.0;
             double startThreshold = (bucket - halfStep) - lead;
-            double endThresholdExclusive = bucket + halfStep;
+            // Cap start temperature below nominal bucket °C so a warming sensor has headroom in-band
+            // (restores the historical ~0.5°C margin; upper band edge alone allows 24.9°C for a "24°C" bucket).
+            const double startBelowNominalC = 0.5;
+            double endThresholdExclusive = Math.Min(bucket + halfStep, bucket - startBelowNominalC);
             bool inWindow = temp >= startThreshold && temp < endThresholdExclusive;
-            if (!inWindow) {
-                Log($"⏳ Missing dark for {bucket}°C bucket, but sensor {temp:F1}°C outside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C — waiting");
+            int nextWarmerBucket = bucket + bucketStepC;
+            bool autoBypassHighInBand = !inWindow &&
+                ExecutionMode == DarkExecutionMode.Auto &&
+                temp >= startThreshold &&
+                temp < bucket + halfStep &&
+                LacksAcceptableMaster(nextWarmerBucket, masters, cutoff, scopeId);
+
+            if (!inWindow && !autoBypassHighInBand) {
+                Log($"⏳ Missing dark for {bucket}°C bucket, but sensor {temp:F1}°C outside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C (need temp < {bucket - startBelowNominalC:F1}°C) — waiting");
                 return false;
+            }
+
+            if (autoBypassHighInBand) {
+                Log($"🌑 Missing dark for {bucket}°C bucket; sensor {temp:F1}°C is high in-band but bucket {nextWarmerBucket}°C also has no master — starting Auto capture (may retarget upward).");
+                return true;
             }
 
             Log($"🌑 Missing dark for {bucket}°C bucket and sensor {temp:F1}°C is inside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C — darks needed!");
@@ -286,12 +331,14 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             return results.ToArray();
         }
 
-        private void Log(string message) {
+        private void Log(string message, bool discordVerboseOnly = false) {
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
                 File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");
             } catch { }
-            _ = _plugin.SendDiscordAsync(message);
+            var mirrorDiscord = discordVerboseOnly ? _plugin.DiscordVerbosePerFrame : true;
+            if (mirrorDiscord)
+                _ = _plugin.SendDiscordAsync(message);
         }
 
         public override object Clone() {

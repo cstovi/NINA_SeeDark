@@ -39,22 +39,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - pre-range lead is fixed internally to `2°C` and hidden in UI
   - stack frame counts are fixed internally to min `20` and max `50` (most recent frames), hidden in UI
   - lifecycle management is opt-in for archive/recovery behavior; archive deletion is a separate opt-in
-- Container UI now includes:
-  - `Execution Mode` selector (`Manual`, `Auto`)
-  - hint text reminding that check exposure/gain must match child dark-capture settings
-  - in Auto mode, container details/children/triggers/conditions are hidden/disabled and an explicit warning is shown
+- Container UI: exposure and gain only (no execution-mode picker, no hint text); `Auto` is the default for new containers. Legacy sequences deserialized with `Manual` still work and show child UI when applicable.
 - Plugin options auto-save on edit (no manual Save button)
-- `Discord webhook URL` is intentionally placed at the bottom of plugin options
-- Plugin options include `Default mode (new containers)` with `Auto` as default; users can switch to `Manual` for new containers.
+- Notifications at the bottom: `Discord webhook URL`, optional **Verbose** per-frame auto dark lines (chatty; dedicated webhook/channel recommended)
 - Design intent remains:
   - `SeeDarkContainer` = decision gate
-  - Manual mode = user-controlled children
+  - Manual mode = user-controlled children (hidden from UI for now; see Next Planned Work)
   - Auto mode = container-owned internal dark capture
 
 ## Next Planned Work (Temporary)
 
 > Remove or update these items once implemented.
 
+- [ ] Re-expose **Manual** execution mode (and plugin default for new containers) as an **advanced** option; keep `DarkExecutionMode`, `ShowManualChildren`, and manual execution path until then.
 - [ ] Decide whether to expose minimal Auto capture count controls, or keep internal fixed 20/30/50 behavior.
 - [ ] Add optional filter-specific exposure/gain overrides (`IR`, `LP`) behind a default-off toggle; fall back to global defaults when unset.
 - [ ] Consider re-introducing pre-range lead as an advanced-only option if real-world testing justifies it.
@@ -90,12 +87,14 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `MasterLibraryFolder` | string | _(empty)_ | Folder where stacker writes master FITS files |
 | `MinFrameCount` | int | 20 | Internal fixed minimum frames required to stack a group (hidden in UI) |
 | `MaxFrameCount` | int | 50 | Internal fixed maximum frames stacked per group (most recent frames, hidden in UI) |
-| `DefaultExecutionMode` | int | 1 | Default execution mode for newly created containers (`1=Auto`, `0=Manual`) |
+| `DefaultExecutionMode` | int | 1 | Default for new containers (`1=Auto`, `0=Manual`); no UI — reserved for future advanced mode |
 | `EnableLifecycleManagement` | bool | false | Opt-in: archive used raws and allow archive-based recovery rebuilds |
 | `DeleteArchivedRawsAfterMaxAge` | bool | false | Opt-in: delete archived raws older than `MaxAgeDays` |
 | `TempBucketSize` | int | 2 | User-selectable: 2 or 3 in simple mode |
 | `StackTolerance` | int | 2 | Internal/derived from bucket size (not shown in UI) |
 | `PreBucketLeadC` | int | 2 | Internal fixed pre-range lead (hidden in UI) |
+| `DiscordWebhookUrl` | string | _(empty)_ | Optional; mirrors log lines to Discord |
+| `DiscordVerbosePerFrame` | bool | false | Also mirror per-frame auto dark lines (noisy; own channel recommended) |
 
 ## Master Discovery Source of Truth
 
