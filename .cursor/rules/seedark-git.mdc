@@ -1,0 +1,25 @@
+---
+description: After editing this repo, commit and push to GitHub with a clear message (CI runs on push).
+alwaysApply: true
+---
+
+# Git: commit and push after changes
+
+GitHub Actions (`.github/workflows/*.yml`) **do not run when files are saved locally**. They run when commits are **pushed** to GitHub. Nothing in YAML can auto-commit from Cursor.
+
+## Agent behavior
+
+When you finish a coherent batch of edits to this repository (feature, fix, or docs):
+
+1. Run `git status` and stage only relevant paths (`git add` for changed plugin/workflow/tool files; never stage unrelated secrets or junk).
+2. Commit with an **imperative, descriptive subject** (about 50–72 chars if possible) and optional body listing **what** changed and **why** if non-obvious.
+   - Example subject: `SeeDark: add Discord verbose per-frame option`
+   - Avoid vague messages like `updates` or `fix`.
+3. Push to `origin` using the current branch (`git push -u origin <branch>` if no upstream yet).
+4. If `git_write` or `network` permission is unavailable, output the exact `git add` / `git commit` / `git push` commands for the user.
+
+Do **not** force-push to shared branches. Do **not** commit `.env`, credentials, or machine-local-only paths unless the user explicitly requests them.
+
+## Relation to CI
+
+Pushing triggers **Validate Changes** (PowerShell syntax + Release build). Pushing a tag `v*` triggers **Release** (GitHub release + DLL artifact).

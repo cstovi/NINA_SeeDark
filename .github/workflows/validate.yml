@@ -1,0 +1,67 @@
+# Runs on every push and on pull_request — not on local saves.
+# To run CI: commit your changes, then push to GitHub.
+# See .cursor/rules/seedark-git.mdc for agent commit/push expectations.
+
+name: Validate Changes
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate PowerShell syntax
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $scripts = Get-ChildItem -Path . -Filter *.ps1 -File -Recurse
+          if (-not $scripts) {
+            Write-Host "No PowerShell scripts found. Skipping syntax validation."
+            exit 0
+          }
+          $failed = $false
+          foreach ($script in $scripts) {
+            $null = $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $script.FullName,
+              [ref]$null,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              Write-Host "::error file=$($script.FullName)::Syntax errors in $($script.FullName)"
+              foreach ($err in $errors) {
+                Write-Host "  - $($err.Message)"
+              }
+            } else {
+              Write-Host "OK: $($script.FullName)"
+            }
+          }
+          if ($failed) {
+            throw "PowerShell syntax validation failed."
+          }
+
+  # NINA plugin: WPF / net8.0-windows — keep build on push/PR alongside generic validation.
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore "NINA.Plugin.SeeDark/NINA.Plugin.SeeDark.csproj"
+
+      - name: Build
+        run: dotnet build "NINA.Plugin.SeeDark/NINA.Plugin.SeeDark.csproj" --configuration Release --no-restore
