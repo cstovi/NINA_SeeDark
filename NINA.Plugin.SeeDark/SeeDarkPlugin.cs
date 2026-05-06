@@ -12,6 +12,7 @@ using NINA.Equipment.Interfaces.Mediator;
 using NINA.Plugin;
 using NINA.Plugin.Interfaces;
 using NINA.Profile.Interfaces;
+using NINA.Plugin.SeeDark.Sequencer;
 
 namespace NINA.Plugin.SeeDark {
 
@@ -52,6 +53,7 @@ namespace NINA.Plugin.SeeDark {
             MasterLibraryFolder   = Settings.MasterLibraryFolder;
             MinFrameCount         = Settings.MinFrameCount;
             MaxFrameCount         = Settings.MaxFrameCount;
+            DefaultExecutionMode  = NormalizeExecutionMode((DarkExecutionMode)Settings.DefaultExecutionMode);
             EnableLifecycleManagement = Settings.EnableLifecycleManagement;
             DeleteArchivedRawsAfterMaxAge = Settings.DeleteArchivedRawsAfterMaxAge;
             DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
@@ -103,6 +105,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.MasterLibraryFolder = _masterLibraryFolder;
                 Settings.MinFrameCount       = _minFrameCount;
                 Settings.MaxFrameCount       = _maxFrameCount;
+                Settings.DefaultExecutionMode = (int)_defaultExecutionMode;
                 Settings.EnableLifecycleManagement = _enableLifecycleManagement;
                 Settings.DeleteArchivedRawsAfterMaxAge = _deleteArchivedRawsAfterMaxAge;
                 Settings.DiscordWebhookUrl   = _discordWebhookUrl;
@@ -128,6 +131,8 @@ namespace NINA.Plugin.SeeDark {
         private static int DeriveInternalPreBucketLeadC() => 2;
         private static int DeriveInternalMinFrameCount() => 20;
         private static int DeriveInternalMaxFrameCount() => 50;
+        private static DarkExecutionMode NormalizeExecutionMode(DarkExecutionMode value)
+            => value == DarkExecutionMode.Manual ? DarkExecutionMode.Manual : DarkExecutionMode.Auto;
 
         public async Task SendDiscordAsync(string msg) {
             var url = DiscordWebhookUrl;
@@ -205,6 +210,12 @@ namespace NINA.Plugin.SeeDark {
         public int MaxFrameCount {
             get => _maxFrameCount;
             set { _maxFrameCount = DeriveInternalMaxFrameCount(); RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private DarkExecutionMode _defaultExecutionMode = DarkExecutionMode.Auto;
+        public DarkExecutionMode DefaultExecutionMode {
+            get => _defaultExecutionMode;
+            set { _defaultExecutionMode = NormalizeExecutionMode(value); RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private bool _enableLifecycleManagement = false;

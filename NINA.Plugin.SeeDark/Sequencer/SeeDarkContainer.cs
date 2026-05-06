@@ -59,7 +59,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             _plugin = plugin;
             TargetExposure = plugin.Settings.TargetExposure;
             Gain           = plugin.Settings.Gain;
-            ExecutionMode  = DarkExecutionMode.Manual;
+            ExecutionMode  = plugin.DefaultExecutionMode;
             Name = "SeeDark Dark Manager";
             if (System.Windows.Application.Current?.Resources["SeeDark_Icon"] is System.Windows.Media.GeometryGroup icon)
                 Icon = icon;

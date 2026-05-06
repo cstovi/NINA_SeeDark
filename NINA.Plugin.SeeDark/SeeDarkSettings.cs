@@ -22,6 +22,7 @@ namespace NINA.Plugin.SeeDark {
         public int TempBucketSize { get; set; } = 2;
         public int StackTolerance { get; set; } = 2;
         public int PreBucketLeadC { get; set; } = 2;
+        public int DefaultExecutionMode { get; set; } = 1; // 0=Manual, 1=Auto
 
         private static string SettingsPath => Path.Combine(DataFolder, "settings.json");
 

@@ -45,6 +45,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - in Auto mode, container details/children/triggers/conditions are hidden/disabled and an explicit warning is shown
 - Plugin options auto-save on edit (no manual Save button)
 - `Discord webhook URL` is intentionally placed at the bottom of plugin options
+- Plugin options include `Default mode (new containers)` with `Auto` as default; users can switch to `Manual` for new containers.
 - Design intent remains:
   - `SeeDarkContainer` = decision gate
   - Manual mode = user-controlled children
@@ -54,12 +55,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > Remove or update these items once implemented.
 
-- [ ] Decide whether `ExecutionMode` default for new containers should become `Auto` or remain `Manual`.
 - [ ] Decide whether to expose minimal Auto capture count controls, or keep internal fixed 20/30/50 behavior.
 - [ ] Add optional filter-specific exposure/gain overrides (`IR`, `LP`) behind a default-off toggle; fall back to global defaults when unset.
 - [ ] Consider re-introducing pre-range lead as an advanced-only option if real-world testing justifies it.
 - [ ] Consider exposing stack min/max frame counts as advanced-only options if real-world testing justifies it.
-- [ ] If auto mode ships, update this file and remove completed checklist entries.
 
 ## Dark Stacker (`StackMasterDarksInstruction.cs`)
 
@@ -91,6 +90,7 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `MasterLibraryFolder` | string | _(empty)_ | Folder where stacker writes master FITS files |
 | `MinFrameCount` | int | 20 | Internal fixed minimum frames required to stack a group (hidden in UI) |
 | `MaxFrameCount` | int | 50 | Internal fixed maximum frames stacked per group (most recent frames, hidden in UI) |
+| `DefaultExecutionMode` | int | 1 | Default execution mode for newly created containers (`1=Auto`, `0=Manual`) |
 | `EnableLifecycleManagement` | bool | false | Opt-in: archive used raws and allow archive-based recovery rebuilds |
 | `DeleteArchivedRawsAfterMaxAge` | bool | false | Opt-in: delete archived raws older than `MaxAgeDays` |
 | `TempBucketSize` | int | 2 | User-selectable: 2 or 3 in simple mode |

@@ -82,6 +82,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Default exposure (s):" VerticalAlignment="Center" Margin="0,0,8,4"/>
@@ -104,11 +105,19 @@
                 <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding MaxAgeDays, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
                 <TextBlock Grid.Row="3" Grid.Column="2" Text="default 180 (6 months)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
 
-                <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding EnableLifecycleManagement, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"/>
-                <TextBlock Grid.Row="4" Grid.Column="2" Text="Enable lifecycle management (archive used raw darks and allow archive-based rebuilds)." Foreground="#888" VerticalAlignment="Center" Margin="8,4,0,0" FontSize="11"/>
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Default mode (new containers):" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox Grid.Row="4" Grid.Column="1" SelectedValue="{Binding DefaultExecutionMode}"
+                          SelectedValuePath="Tag" VerticalAlignment="Center">
+                    <ComboBoxItem Content="Auto" Tag="{x:Static seq:DarkExecutionMode.Auto}"/>
+                    <ComboBoxItem Content="Manual" Tag="{x:Static seq:DarkExecutionMode.Manual}"/>
+                </ComboBox>
+                <TextBlock Grid.Row="4" Grid.Column="2" Text="Auto: container captures darks internally. Manual: container runs child instructions. Applies to new containers." Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
 
-                <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding DeleteArchivedRawsAfterMaxAge, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding EnableLifecycleManagement}" VerticalAlignment="Center" Margin="0,4,0,0"/>
-                <TextBlock Grid.Row="5" Grid.Column="2" Text="Delete archived raw darks older than Max master age (advanced; irreversible)." Foreground="#888" VerticalAlignment="Center" Margin="8,4,0,0" FontSize="11"/>
+                <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding EnableLifecycleManagement, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="5" Grid.Column="2" Text="Enable lifecycle management (archive used raw darks and allow archive-based rebuilds)." Foreground="#888" VerticalAlignment="Center" Margin="8,4,0,0" FontSize="11"/>
+
+                <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding DeleteArchivedRawsAfterMaxAge, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding EnableLifecycleManagement}" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="6" Grid.Column="2" Text="Delete archived raw darks older than Max master age (advanced; irreversible)." Foreground="#888" VerticalAlignment="Center" Margin="8,4,0,0" FontSize="11"/>
 
             </Grid>
 

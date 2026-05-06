@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.3.0 - 2026-05-06
+
+- Set default mode for new `SeeDark Dark Manager` containers to `Auto`.
+- Added plugin option `Default mode (new containers)` with clear behavior text (`Auto` vs `Manual`).
+- Kept `Manual` selectable via plugin configuration for users who prefer child-instruction workflows.
+- Cleaned up temporary TODO list and updated project docs to match current shipped behavior.
+
 ## v1.2.0 - 2026-05-06
 
 - Added release tracking with this `CHANGELOG.md`.
