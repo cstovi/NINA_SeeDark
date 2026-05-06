@@ -1,25 +1,36 @@
 ---
-description: After editing this repo, commit and push to GitHub with a clear message (CI runs on push).
+description: Every tracked change must be committed and pushed so history allows safe revert.
 alwaysApply: true
 ---
 
-# Git: commit and push after changes
+# Git: commit and push — required for revert safety
 
-GitHub Actions (`.github/workflows/*.yml`) **do not run when files are saved locally**. They run when commits are **pushed** to GitHub. Nothing in YAML can auto-commit from Cursor.
+**Rollback depends on commits.** Uncommitted work cannot be reverted cleanly with `git revert` or `git checkout`. Treat **commit + push** as part of finishing any edit to this repo, not optional polish.
 
-## Agent behavior
+GitHub Actions run **after push**, not when files are saved locally.
 
-When you finish a coherent batch of edits to this repository (feature, fix, or docs):
+## Agent behavior (mandatory)
 
-1. Run `git status` and stage only relevant paths (`git add` for changed plugin/workflow/tool files; never stage unrelated secrets or junk).
-2. Commit with an **imperative, descriptive subject** (about 50–72 chars if possible) and optional body listing **what** changed and **why** if non-obvious.
-   - Example subject: `SeeDark: add Discord verbose per-frame option`
-   - Avoid vague messages like `updates` or `fix`.
-3. Push to `origin` using the current branch (`git push -u origin <branch>` if no upstream yet).
-4. If `git_write` or `network` permission is unavailable, output the exact `git add` / `git commit` / `git push` commands for the user.
+1. **Before ending a turn** that modified project files: run `git status`. If there are meaningful changes (not just accidental whitespace), **commit and push** in the same session unless the user explicitly asked to hold commits.
 
-Do **not** force-push to shared branches. Do **not** commit `.env`, credentials, or machine-local-only paths unless the user explicitly requests them.
+2. **Scope commits** so each commit is revert-friendly: one logical change per commit when practical (e.g. plugin UI vs. sequencer logic vs. workflow). If many files changed for one feature, one commit with a detailed message is acceptable.
 
-## Relation to CI
+3. **Stage** every intentional project file (`git add -p` or paths). Respect `.gitignore` (build outputs, etc.). Do **not** commit secrets, API keys, or personal machine-only paths.
 
-Pushing triggers **Validate Changes** (PowerShell syntax + Release build). Pushing a tag `v*` triggers **Release** (GitHub release + DLL artifact).
+4. **Message**: imperative subject + optional body with **what** and **why**. Examples:
+   - `SeeDark: expose ApplicationStatus progress during auto dark capture`
+   - `ci: add release workflow for tagged builds`
+
+5. **Push** to `origin` on the current branch (`git push -u origin HEAD` if no upstream).
+
+6. If **git_write** / **network** is blocked: print exact `git add`, `git commit`, `git push` commands so the user can run them immediately.
+
+## Do not
+
+- Force-push to shared branches.
+- Leave completed features **only on disk** without a commit.
+- Use meaningless subjects (`fix`, `wip`, `updates`).
+
+## CI
+
+Push triggers **Validate Changes** (PowerShell + Release build). Tag `v*` triggers **Release** (DLL artifact).
