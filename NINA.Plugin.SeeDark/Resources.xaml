@@ -67,15 +67,18 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Default exposure (s):" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Default exposure (s):" VerticalAlignment="Center" Margin="0,0,8,4"
+                           ToolTip="Overridable per container."/>
                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"
                          ToolTip="Overridable per container."/>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Default gain:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Default gain:" VerticalAlignment="Center" Margin="0,0,8,4"
+                           ToolTip="e.g. S30 = 200. Overridable per container."/>
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"
                          ToolTip="e.g. S30 = 200. Overridable per container."/>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Temp bucket size (°C):" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Temp bucket size (°C):" VerticalAlignment="Center" Margin="0,0,8,4"
+                           ToolTip="One master dark for every 2 or 3 degrees."/>
                 <ComboBox Grid.Row="2" Grid.Column="1" SelectedValue="{Binding TempBucketSize}"
                           SelectedValuePath="Content" VerticalAlignment="Center" Margin="0,0,0,4"
                           ToolTip="One master dark for every 2 or 3 degrees.">
@@ -83,11 +86,13 @@
                     <ComboBoxItem Content="3"/>
                 </ComboBox>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Max master age (days):" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Max master age (days):" VerticalAlignment="Center" Margin="0,0,8,0"
+                           ToolTip="Days before a master should be replaceable."/>
                 <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding MaxAgeDays, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
                          ToolTip="Days before a master should be replaceable."/>
 
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Warmer bucket steps:" VerticalAlignment="Center" Margin="0,4,8,4"/>
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Warmer bucket steps:" VerticalAlignment="Center" Margin="0,4,8,4"
+                           ToolTip="Allow additional darks for the next Master Dark temp range up if temp rises during capture."/>
                 <ComboBox Grid.Row="4" Grid.Column="1" SelectedValue="{Binding AutoDarkMaxWarmerBucketSteps}"
                           SelectedValuePath="Content" VerticalAlignment="Center" Margin="0,4,0,4"
                           ToolTip="Allow additional darks for the next Master Dark temp range up if temp rises during capture.">
@@ -101,11 +106,13 @@
                            Text="SeeDark Dark Manager aims for 30 accepted frames at your default exposure (≤30 capture attempts per temperature segment). Allowing warmer continuation adds roughly another segment per band — often about twice as long when moving one band warmer."
                            Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="Manage lifecycle:" VerticalAlignment="Center" Margin="0,4,8,0"/>
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="Manage lifecycle:" VerticalAlignment="Center" Margin="0,4,8,0"
+                           ToolTip="Archive used raws after stacking and allow archive-based recovery rebuilds."/>
                 <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding EnableLifecycleManagement, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"
                           ToolTip="Archive used raws after stacking and allow archive-based recovery rebuilds."/>
 
-                <TextBlock Grid.Row="7" Grid.Column="0" Text="Delete archive raws:" VerticalAlignment="Center" Margin="0,4,8,0"/>
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="Delete archive raws:" VerticalAlignment="Center" Margin="0,4,8,0"
+                           ToolTip="Delete archived raws older than Max master age. Advanced — irreversible."/>
                 <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding DeleteArchivedRawsAfterMaxAge, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding EnableLifecycleManagement}" VerticalAlignment="Center" Margin="0,4,0,0"
                           ToolTip="Delete archived raws older than Max master age. Advanced — irreversible."/>
 
@@ -127,7 +134,8 @@
                 <Button Grid.Column="2" Content="..." Width="28" Margin="8,0,0,4" VerticalAlignment="Center" Click="BrowseRawDarksFolder_Click"/>
             </Grid>
             <DockPanel Margin="0,4,0,4" LastChildFill="False">
-                <TextBlock DockPanel.Dock="Left" Text="Additional NINA masters:" Width="180" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock DockPanel.Dock="Left" Text="Additional NINA masters:" Width="180" VerticalAlignment="Center" Margin="0,0,8,0"
+                           ToolTip="Also write a NINA-format master (16-bit + BZERO). SIRIL/PixInsight float32 master is always written."/>
                 <CheckBox DockPanel.Dock="Left" IsChecked="{Binding WriteNinaLiveMasters, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
                           ToolTip="Also write a NINA-format master (16-bit + BZERO). SIRIL/PixInsight float32 master is always written."/>
             </DockPanel>
@@ -146,10 +154,12 @@
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Discord webhook URL:" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding DiscordWebhookUrl, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Verbose per-frame lines:" VerticalAlignment="Center" Margin="0,4,8,4"/>
-                <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding DiscordVerbosePerFrame, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Verbose per-frame lines:" VerticalAlignment="Center" Margin="0,4,8,4"
+                           ToolTip="Also send each per-frame auto dark line to Discord. Other log lines still mirror when a webhook URL is set. Very chatty; a dedicated channel is recommended."/>
+                <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding DiscordVerbosePerFrame, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,6"
                           ToolTip="Also send each per-frame auto dark line to Discord. Other log lines still mirror when a webhook URL is set. Very chatty; a dedicated channel is recommended."/>
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Scope name:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Scope name:" VerticalAlignment="Center" Margin="0,0,8,0"
+                           ToolTip="If set, prepended to all Discord notifications as 'Name - message'. Sensor temp notifications already include scope model and serial (e.g. S30_5b948371)."/>
                 <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding DiscordScopeName, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
                          ToolTip="If set, prepended to all Discord notifications as 'Name - message'. Sensor temp notifications already include scope model and serial (e.g. S30_5b948371)."/>
                 <TextBlock Grid.Row="2" Grid.Column="2" Text="Optional" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
