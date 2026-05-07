@@ -5,15 +5,26 @@ using System.Windows;
 [assembly: AssemblyTitle("SeeDark")]
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "3.0.0.1001")]
 [assembly: AssemblyMetadata("FeaturedImageURL", "https://i.ibb.co/NdXb8D39/seedark.png")]
-[assembly: AssemblyDescription("Designed for Seestar. Checks whether a master dark is needed for the current sensor temperature, gain, and exposure — and runs your instructions to capture darks only if so. Optionally stacks raw darks into master files.")]
-[assembly: AssemblyMetadata("ShortDescription", "For Seestar users: only runs dark capture when a matching master is missing for current temp/gain/exposure, with optional master-dark stacking.")]
-[assembly: AssemblyMetadata("LongDescription", @"Drop a SeeDark Dark Manager container anywhere in your sequence and add your dark-capture instructions inside it — e.g. a Smart Exposure taking darks with the dark filter. Set the exposure and gain on the container to match what you're imaging — the container will run its children only if no master dark exists for the current sensor temperature, gain, and exposure. For multiple filters or exposures, use one container per combination.
+[assembly: AssemblyDescription("SeeDark manages master darks for Seestar automatically — it captures darks only when your library is missing a fresh master for the current temperature, gain, and exposure, and skips silently when one already exists. A companion instruction stacks raw darks into per-pixel median masters.")]
+[assembly: AssemblyMetadata("ShortDescription", "Captures master darks only when needed for the current sensor temperature, gain, and exposure — skips automatically when a fresh master exists. Includes a stacker to build median masters from raw darks.")]
+[assembly: AssemblyMetadata("LongDescription", @"SeeDark Dark Manager
 
-When you've accumulated enough raw darks, optionally add a Stack SeeDark Master Darks instruction to median-stack them into master files automatically. Set the master dark library folder at the top, and configure the raw darks folder and minimum frame count in the Dark Stacker section below.")]
+Add a SeeDark Dark Manager container anywhere in your NINA sequence. Each time it runs, it reads the current sensor temperature, maps it to the nearest temperature band (2°C or 3°C, configurable), and checks whether a fresh master dark already exists for that band, gain, and exposure.
+
+Already covered — the container skips silently and your sequence continues. Missing or stale — it automatically captures 30 dark frames in the correct band. Proactive warmup — if the current band is already covered but the next warmer band isn't, SeeDark starts capturing immediately, counting frames once the sensor reaches the target band.
+
+Each container has its own exposure and gain settings, so you can run multiple containers for different imaging configurations in the same sequence.
+
+Stack SeeDark Master Darks
+
+Add this instruction to build masters from raws. It scans your raw darks folder, groups frames by temperature band, gain, and exposure, and writes a per-pixel median master FITS for each group that is missing or stale — leaving fresh masters untouched.
+
+An optional Discord webhook mirrors key events (skip decisions, capture results, stack completions) to a channel of your choice. Enable Verbose in the plugin options to also receive per-frame capture lines — a dedicated channel is recommended for that setting.")]
 [assembly: AssemblyCompany("Carl Stovell")]
 [assembly: AssemblyProduct("NINA.Plugin.SeeDark")]
-[assembly: AssemblyVersion("1.6.0.0")]
-[assembly: AssemblyFileVersion("1.6.0.0")]
+[assembly: AssemblyVersion("1.7.0.0")]
+[assembly: AssemblyFileVersion("1.7.0.0")]
+[assembly: AssemblyMetadata("ChangelogURL", "https://github.com/cstovi/NINA_SeeDark/releases")]
 [assembly: Guid("A5E7F3C1-2D4B-4A8E-9F1C-3B6D7E8A0F2C")]
 [assembly: ThemeInfo(
     ResourceDictionaryLocation.None,
