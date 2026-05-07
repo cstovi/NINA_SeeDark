@@ -15,7 +15,7 @@ using NINA.Sequencer.SequenceItem;
 namespace NINA.Plugin.SeeDark.Sequencer {
 
     [Export(typeof(ISequenceItem))]
-    [ExportMetadata("Name", "Stack SeeDark Master Darks")]
+    [ExportMetadata("Name", "SeeDark Stack Master Darks")]
     [ExportMetadata("Description", "Median-stacks raw dark frames into master darks")]
     [ExportMetadata("Icon", "SeeDark_Icon")]
     [ExportMetadata("Category", "SeeDark")]
@@ -28,7 +28,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         [ImportingConstructor]
         public StackMasterDarksInstruction(SeeDarkPlugin plugin) {
             _plugin = plugin;
-            Name = "Stack SeeDark Master Darks";
+            Name = "SeeDark Stack Master Darks";
             if (System.Windows.Application.Current?.Resources["SeeDark_Icon"] is GeometryGroup icon)
                 Icon = icon;
             _logFilePath = Path.Combine(
@@ -39,7 +39,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         private StackMasterDarksInstruction(StackMasterDarksInstruction cloneMe) {
             _plugin = cloneMe._plugin;
             _logFilePath = cloneMe._logFilePath;
-            Name = "Stack SeeDark Master Darks";
+            Name = "SeeDark Stack Master Darks";
             Icon = cloneMe.Icon;
         }
 

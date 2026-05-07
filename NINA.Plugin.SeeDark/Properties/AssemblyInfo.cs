@@ -15,7 +15,7 @@ Already covered — the container skips silently and your sequence continues. Mi
 
 Each container has its own exposure and gain settings, so you can run multiple containers for different imaging configurations in the same sequence.
 
-Stack SeeDark Master Darks
+SeeDark Stack Master Darks
 
 Add this instruction to build masters from raws. It scans your raw darks folder, groups frames by temperature band, gain, and exposure, and writes a per-pixel median master FITS for each group that is missing or stale — leaving fresh masters untouched.
 
