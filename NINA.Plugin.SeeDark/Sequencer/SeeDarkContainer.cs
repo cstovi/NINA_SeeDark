@@ -286,7 +286,9 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 needsDarks = true;
             } else {
                 needsDarks = lackCurrent;
-                Log(needsDarks ? "🌑 No matching dark found — darks needed!" : "✅ Matching dark exists — skipping");
+                Log(needsDarks
+                    ? "🌑 No matching dark found — darks needed!"
+                    : $"✅ Matching dark exists — skipping ({bucket}°C ✓, {nextWarmerBucket}°C ✓)");
             }
             if (!needsDarks) return false;
 
