@@ -97,11 +97,11 @@
                     <ComboBoxItem Content="2"/>
                     <ComboBoxItem Content="3"/>
                 </ComboBox>
-                <TextBlock Grid.Row="4" Grid.Column="2" Text="Bands warmer than the starting bucket Auto may follow when no master exists there (cooler buckets always allowed)."
+                <TextBlock Grid.Row="4" Grid.Column="2" Text="Allow additional darks for next Master Dark temp range up if temp rises during capture."
                            Foreground="#888" VerticalAlignment="Top" Margin="8,4,0,4" FontSize="11" TextWrapping="Wrap"/>
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3"
-                           Text="SeeDark Dark Manager (Auto) aims for 30 accepted frames at your default exposure (≤30 capture attempts per temperature segment). Allowing warmer continuation adds roughly another segment per band — often about twice as long when moving one band warmer."
+                           Text="SeeDark Dark Manager aims for 30 accepted frames at your default exposure (≤30 capture attempts per temperature segment). Allowing warmer continuation adds roughly another segment per band — often about twice as long when moving one band warmer."
                            Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
                 <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding EnableLifecycleManagement, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"/>
