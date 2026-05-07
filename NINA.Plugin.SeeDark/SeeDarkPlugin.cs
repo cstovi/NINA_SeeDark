@@ -148,6 +148,58 @@ namespace NINA.Plugin.SeeDark {
         private static DarkExecutionMode NormalizeExecutionMode(DarkExecutionMode value)
             => value == DarkExecutionMode.Manual ? DarkExecutionMode.Manual : DarkExecutionMode.Auto;
 
+        /// <summary>
+        /// Refreshes runtime fields from persisted settings so sequencer runs pick up option changes
+        /// made since plugin construction (for example, after toggling verbose Discord notifications).
+        /// </summary>
+        public void RefreshRuntimeSettingsFromDisk() {
+            try {
+                var latest = SeeDarkSettings.Load(ProfileService.ActiveProfile.ImageFileSettings.FilePath);
+                latest.TempBucketSize = NormalizeBucketSize(latest.TempBucketSize);
+                latest.StackTolerance = DeriveInternalTolerance(latest.TempBucketSize);
+                latest.PreBucketLeadC = DeriveInternalPreBucketLeadC();
+                latest.MinFrameCount = DeriveInternalMinFrameCount();
+                latest.MaxFrameCount = DeriveInternalMaxFrameCount();
+                latest.AutoDarkMaxWarmerBucketSteps = NormalizeMaxWarmerBucketSteps(latest.AutoDarkMaxWarmerBucketSteps);
+
+                Settings.TargetExposure = latest.TargetExposure;
+                Settings.MaxAgeDays = latest.MaxAgeDays;
+                Settings.Gain = latest.Gain;
+                Settings.MasterLibraryFolder = latest.MasterLibraryFolder;
+                Settings.MinFrameCount = latest.MinFrameCount;
+                Settings.MaxFrameCount = latest.MaxFrameCount;
+                Settings.DefaultExecutionMode = latest.DefaultExecutionMode;
+                Settings.EnableLifecycleManagement = latest.EnableLifecycleManagement;
+                Settings.DeleteArchivedRawsAfterMaxAge = latest.DeleteArchivedRawsAfterMaxAge;
+                Settings.WriteNinaLiveMasters = latest.WriteNinaLiveMasters;
+                Settings.DiscordWebhookUrl = latest.DiscordWebhookUrl;
+                Settings.DiscordScopeName = latest.DiscordScopeName;
+                Settings.DiscordVerbosePerFrame = latest.DiscordVerbosePerFrame;
+                Settings.TempBucketSize = latest.TempBucketSize;
+                Settings.StackTolerance = latest.StackTolerance;
+                Settings.PreBucketLeadC = latest.PreBucketLeadC;
+                Settings.AutoDarkMaxWarmerBucketSteps = latest.AutoDarkMaxWarmerBucketSteps;
+
+                _targetExposure = latest.TargetExposure;
+                _maxAgeDays = latest.MaxAgeDays;
+                _gain = latest.Gain;
+                _masterLibraryFolder = latest.MasterLibraryFolder;
+                _minFrameCount = latest.MinFrameCount;
+                _maxFrameCount = latest.MaxFrameCount;
+                _defaultExecutionMode = NormalizeExecutionMode((DarkExecutionMode)latest.DefaultExecutionMode);
+                _enableLifecycleManagement = latest.EnableLifecycleManagement;
+                _deleteArchivedRawsAfterMaxAge = latest.DeleteArchivedRawsAfterMaxAge;
+                _writeNinaLiveMasters = latest.WriteNinaLiveMasters;
+                _discordWebhookUrl = latest.DiscordWebhookUrl;
+                _discordScopeName = latest.DiscordScopeName;
+                _discordVerbosePerFrame = latest.DiscordVerbosePerFrame;
+                _tempBucketSize = latest.TempBucketSize;
+                _stackTolerance = latest.StackTolerance;
+                _preBucketLeadC = latest.PreBucketLeadC;
+                _autoDarkMaxWarmerBucketSteps = latest.AutoDarkMaxWarmerBucketSteps;
+            } catch { }
+        }
+
         public async Task SendDiscordAsync(string msg) {
             var url = DiscordWebhookUrl;
             if (string.IsNullOrWhiteSpace(url)) return;

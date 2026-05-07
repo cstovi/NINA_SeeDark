@@ -81,6 +81,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         }
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token) {
+            _plugin.RefreshRuntimeSettingsFromDisk();
             if (!NeedsDarks()) return;
             if (ExecutionMode == DarkExecutionMode.Auto) {
                 await ExecuteAutoCapture(progress, token);
