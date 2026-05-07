@@ -14,6 +14,7 @@ using NINA.Image.Interfaces;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Container.ExecutionStrategy;
 using NINA.Sequencer.SequenceItem;
+using NINA.Sequencer.Utility;
 
 namespace NINA.Plugin.SeeDark.Sequencer {
     public enum DarkExecutionMode {
@@ -104,7 +105,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             double startTemp = GetSensorTempFromMediator();
             if (double.IsNaN(startTemp)) {
-                Log("⚠️ Auto mode could not read sensor temperature at start; skipping auto capture and running child instructions instead.");
+                Log("⚠️ Could not read sensor temperature at start; skipping dark capture.");
                 await base.Execute(progress, token);
                 return;
             }
@@ -122,7 +123,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             var darkFilter = _plugin.GetDarkFilter();
             if (darkFilter == null) {
-                Log("⚠️ Auto mode could not find a DARK filter definition. Configure a DARK filter or use Manual mode.");
+                Log("⚠️ Could not find a DARK filter definition. Configure a DARK filter to continue.");
                 return;
             }
 
@@ -402,7 +403,10 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 var imageData = await exposureData.ToImageData(null, token);
                 if (imageData == null) return;
                 // Route through NINA's save pipeline so DARK naming/path comes from NINA File settings.
-                var prepareTask = Task.FromResult<IRenderedImage>(null!);
+                var prepareTask = _plugin.ImagingMediator.PrepareImage(
+                    imageData,
+                    new NINA.Core.Utility.PrepareImageParameters(null, false),
+                    token);
                 await _plugin.ImageSaveMediator.Enqueue(imageData, prepareTask, null, token);
             } catch (Exception ex) {
                 Log($"⚠️ Failed to save raw dark frame: {ex.Message}");
