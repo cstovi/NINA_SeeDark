@@ -22,8 +22,8 @@ Add this instruction to build masters from raws. It scans your NINA DARK capture
 An optional Discord webhook mirrors key events (skip decisions, capture results, stack completions) to a channel of your choice. Enable Verbose in the plugin options to also receive per-frame capture lines — a dedicated channel is recommended for that setting.")]
 [assembly: AssemblyCompany("Carl Stovell")]
 [assembly: AssemblyProduct("NINA.Plugin.SeeDark")]
-[assembly: AssemblyVersion("1.7.2.0")]
-[assembly: AssemblyFileVersion("1.7.2.0")]
+[assembly: AssemblyVersion("1.7.3.0")]
+[assembly: AssemblyFileVersion("1.7.3.0")]
 [assembly: AssemblyMetadata("ChangelogURL", "https://github.com/cstovi/NINA_SeeDark/releases")]
 [assembly: Guid("A5E7F3C1-2D4B-4A8E-9F1C-3B6D7E8A0F2C")]
 [assembly: ThemeInfo(
