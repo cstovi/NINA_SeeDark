@@ -147,6 +147,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             int attempts = 0;
             int consecutiveBucketMisses = 0;
             int anchorBucket = targetBucket;
+            Log($"📷 Dark capture in progress for {targetBucket}°C bucket ({goodFrames}/{targetFrames} accepted).");
 
             ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
 
@@ -197,6 +198,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     lifetimeAccepted++;
                     consecutiveBucketMisses = 0;
                     Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target) — accepted ({goodFrames}/{targetFrames})", discordVerboseOnly: true);
+                    if (goodFrames % 5 == 0 || goodFrames == targetFrames)
+                        Log($"📷 Dark capture in progress for {targetBucket}°C bucket ({goodFrames}/{targetFrames} accepted).");
                     ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
                 } else if (LacksAcceptableMaster(frameBucket, masters, masterCutoff, scopeId)) {
                     if (!MayRetargetToMissingMasterBucket(frameBucket, anchorBucket, bucketStepC, maxWarmerSteps)) {
@@ -215,6 +218,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                         lifetimeAccepted++;
                         consecutiveBucketMisses = 0;
                         Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — drifted out of {previousTarget}°C target band; bucket {frameBucket}°C also has no acceptable master in the library — retargeting here ({goodFrames}/{targetFrames}); segment attempts reset to 0.", discordVerboseOnly: true);
+                        Log($"📷 Dark capture in progress for {targetBucket}°C bucket ({goodFrames}/{targetFrames} accepted).");
                         attempts = 0;
                         ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
                     }
