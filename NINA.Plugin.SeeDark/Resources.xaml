@@ -130,7 +130,8 @@
                 <Button Grid.Column="2" Content="..." Width="28" Margin="8,0,0,4" VerticalAlignment="Center" Click="BrowseRawDarksFolder_Click"/>
             </Grid>
             <DockPanel Margin="0,4,0,4" LastChildFill="True">
-                <CheckBox DockPanel.Dock="Left" IsChecked="{Binding WriteNinaLiveMasters, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Margin="184,2,8,0"/>
+                <TextBlock DockPanel.Dock="Left" Text="Additional NINA masters:" Width="180" VerticalAlignment="Top" Margin="0,2,8,0"/>
+                <CheckBox DockPanel.Dock="Left" IsChecked="{Binding WriteNinaLiveMasters, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Margin="0,2,8,0"/>
                 <TextBlock Text="Also write a NINA-format master (16-bit + BZERO). SIRIL/PixInsight float32 master is always written."
                            TextWrapping="Wrap" Foreground="#888" FontSize="11" VerticalAlignment="Top"/>
             </DockPanel>
