@@ -124,19 +124,16 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Raw darks folder:" VerticalAlignment="Center" Margin="0,0,8,4"/>
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding RawDarksFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <Button Grid.Row="0" Grid.Column="2" Content="..." Width="28" Margin="8,0,0,4" VerticalAlignment="Center" Click="BrowseRawDarksFolder_Click"/>
-
-                <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding WriteNinaLiveMasters, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"/>
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="Also write a NINA-format master (16-bit + BZERO). SIRIL/PixInsight float32 master is always written."
-                           Foreground="#888" VerticalAlignment="Top" Margin="8,4,0,0" FontSize="11" TextWrapping="Wrap"/>
+                <TextBlock Grid.Column="0" Text="Raw darks folder:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <TextBox Grid.Column="1" Text="{Binding RawDarksFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
+                <Button Grid.Column="2" Content="..." Width="28" Margin="8,0,0,4" VerticalAlignment="Center" Click="BrowseRawDarksFolder_Click"/>
             </Grid>
+            <DockPanel Margin="0,4,0,4" LastChildFill="True">
+                <CheckBox DockPanel.Dock="Left" IsChecked="{Binding WriteNinaLiveMasters, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Margin="184,2,8,0"/>
+                <TextBlock Text="Also write a NINA-format master (16-bit + BZERO). SIRIL/PixInsight float32 master is always written."
+                           TextWrapping="Wrap" Foreground="#888" FontSize="11" VerticalAlignment="Top"/>
+            </DockPanel>
 
             <TextBlock Text="Notifications" FontWeight="Bold" Margin="0,16,0,6"/>
             <Grid Margin="0,0,0,4">
