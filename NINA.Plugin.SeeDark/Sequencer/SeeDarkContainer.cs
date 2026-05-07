@@ -253,7 +253,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
         private bool NeedsDarks() {
             double temp = GetSensorTempFromMediator();
-            Log($"⚙️ Execution mode: {ExecutionMode}", discordVerboseOnly: true);
+            Log($"⚙️ Execution mode: {ExecutionMode}", fileOnly: ExecutionMode != DarkExecutionMode.Manual);
             if (double.IsNaN(temp)) {
                 Log("⚠️ Camera temperature unavailable — darks needed!");
                 return true;
@@ -386,11 +386,12 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             return results.ToArray();
         }
 
-        private void Log(string message, bool discordVerboseOnly = false) {
+        private void Log(string message, bool discordVerboseOnly = false, bool fileOnly = false) {
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
                 File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");
             } catch { }
+            if (fileOnly) return;
             var mirrorDiscord = discordVerboseOnly ? _plugin.DiscordVerbosePerFrame : true;
             if (mirrorDiscord)
                 _ = _plugin.SendDiscordAsync(message);
