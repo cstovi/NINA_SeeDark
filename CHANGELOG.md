@@ -26,7 +26,7 @@ All notable changes to this project are documented in this file.
 
 ## v1.4.0 - 2026-05-06
 
-- Added a user-facing `README.md` for GitHub with setup, mode behavior, matching model, lifecycle notes, logging paths, and release links.
+- Added a user-facing `README.md` for GitHub with setup, Auto-first mode behavior, matching model, lifecycle notes, logging paths, and release links.
 - Kept `CLAUDE.md` as implementation/agent guidance and clarified user-facing docs should live in README.
 
 ## v1.3.0 - 2026-05-06
@@ -43,7 +43,7 @@ All notable changes to this project are documented in this file.
 
 ## v1.1.0 - 2026-05-06
 
-- Added Auto mode dark capture in `SeeDark Dark Manager` (DARK filter/type, user gain/exposure, default offset, target/min/max frame strategy with temperature drift guard).
+- Added Auto mode dark capture in `SeeDark Dark Manager` (DARK filter/type, user gain/exposure, default offset, segment target/min/max strategy with temperature drift guard).
 - Updated container behavior so Auto mode ignores internal child instructions/triggers/conditions and shows explicit UI warning.
 - Introduced non-overlapping shared temperature bucketing logic across match and stack flows.
 - Added opt-in lifecycle controls for raw dark archives and optional age-based archive cleanup.
