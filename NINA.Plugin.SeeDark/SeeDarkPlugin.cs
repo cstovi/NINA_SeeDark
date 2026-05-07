@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.IO;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -184,6 +185,16 @@ namespace NINA.Plugin.SeeDark {
                 return filters.FirstOrDefault(f => f.Name != null && f.Name.IndexOf("DARK", StringComparison.OrdinalIgnoreCase) >= 0);
             } catch {
                 return null;
+            }
+        }
+
+        public string GetNinaRawDarksFolder() {
+            try {
+                var basePath = ProfileService.ActiveProfile?.ImageFileSettings?.FilePath;
+                if (string.IsNullOrWhiteSpace(basePath)) return "";
+                return Path.Combine(basePath, "CALIBRATION", "DARKs");
+            } catch {
+                return "";
             }
         }
 
