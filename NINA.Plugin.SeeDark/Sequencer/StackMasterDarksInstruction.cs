@@ -61,8 +61,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
             Directory.CreateDirectory(masterFolder);
             string archiveFolder = Path.Combine(rawFolder, ArchiveFolderName);
-            Directory.CreateDirectory(archiveFolder);
             bool lifecycleEnabled = _plugin.Settings.EnableLifecycleManagement;
+            if (lifecycleEnabled) Directory.CreateDirectory(archiveFolder);
             bool deleteArchivedEnabled = lifecycleEnabled && _plugin.Settings.DeleteArchivedRawsAfterMaxAge;
 
             Log($"🔭 Scanning {rawFolder}");
