@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.7.0 - 2026-05-07
+
+- Skip notification now confirms both checked buckets: "Matching dark exists — skipping (22°C ✓, 24°C ✓)".
+- Execution mode line suppressed from Discord in Auto mode (still written to the file log).
+- Plugin options: added "overridable per container" hint next to default exposure and gain fields.
+- Renamed "Stack SeeDark Master Darks" instruction to "SeeDark Stack Master Darks" for consistent naming.
+- Updated plugin description and short description for accuracy (reflects Auto-only UI, proactive warmup, skip behaviour).
+- Added changelog URL pointing to GitHub releases.
+
 ## v1.6.0 - 2026-05-06
 
 - Auto dark capture **retargets** when the sensor moves to another temperature bucket that also has no acceptable master (same exposure, gain, scope, and max-age rules as matching). The accepted-frame counter resets for the new bucket so stacking groups stay coherent; drift still stops the run when the new bucket already has a master.
