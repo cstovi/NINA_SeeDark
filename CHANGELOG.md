@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.8.0 - 2026-05-07
+
+- Clarified the `Additional NINA masters` option tooltip to explain the NINA-format master is primarily for Livestack and potentially other NINA dark-consuming workflows.
+
 ## v1.7.1 - 2026-05-07
 
 - `_archived` subfolder is now only created inside the raw darks folder when lifecycle management is enabled, avoiding unused folder creation for users who never enable it.
