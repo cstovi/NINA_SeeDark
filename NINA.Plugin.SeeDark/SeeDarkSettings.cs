@@ -19,6 +19,8 @@ namespace NINA.Plugin.SeeDark {
         public bool EnableLifecycleManagement { get; set; } = false;
         public bool DeleteArchivedRawsAfterMaxAge { get; set; } = false;
         public string DiscordWebhookUrl { get; set; } = "";
+        /// <summary>Optional label prepended to every Discord notification, e.g. "Backyard rig".</summary>
+        public string DiscordScopeName { get; set; } = "";
         /// <summary>When true, per-frame auto dark capture log lines are mirrored to Discord (noisy).</summary>
         public bool DiscordVerbosePerFrame { get; set; } = false;
         public int TempBucketSize { get; set; } = 2;

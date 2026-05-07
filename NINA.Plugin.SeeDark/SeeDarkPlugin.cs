@@ -57,6 +57,7 @@ namespace NINA.Plugin.SeeDark {
             EnableLifecycleManagement = Settings.EnableLifecycleManagement;
             DeleteArchivedRawsAfterMaxAge = Settings.DeleteArchivedRawsAfterMaxAge;
             DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
+            DiscordScopeName      = Settings.DiscordScopeName;
             DiscordVerbosePerFrame = Settings.DiscordVerbosePerFrame;
             TempBucketSize        = Settings.TempBucketSize;
             StackTolerance        = Settings.StackTolerance;
@@ -111,6 +112,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.EnableLifecycleManagement = _enableLifecycleManagement;
                 Settings.DeleteArchivedRawsAfterMaxAge = _deleteArchivedRawsAfterMaxAge;
                 Settings.DiscordWebhookUrl   = _discordWebhookUrl;
+                Settings.DiscordScopeName    = _discordScopeName;
                 Settings.DiscordVerbosePerFrame = _discordVerbosePerFrame;
                 Settings.TempBucketSize      = _tempBucketSize;
                 Settings.StackTolerance      = _stackTolerance;
@@ -144,11 +146,13 @@ namespace NINA.Plugin.SeeDark {
         public async Task SendDiscordAsync(string msg) {
             var url = DiscordWebhookUrl;
             if (string.IsNullOrWhiteSpace(url)) return;
+            var name = DiscordScopeName?.Trim();
+            var payload = string.IsNullOrEmpty(name) ? msg : $"{name} - {msg}";
             try {
                 using var http = new HttpClient();
                 await http.PostAsync(url,
                     new StringContent(
-                        $"{{\"content\":{JsonConvert.ToString(msg)}}}",
+                        $"{{\"content\":{JsonConvert.ToString(payload)}}}",
                         Encoding.UTF8, "application/json"));
             } catch { }
         }
@@ -241,6 +245,12 @@ namespace NINA.Plugin.SeeDark {
         public string DiscordWebhookUrl {
             get => _discordWebhookUrl;
             set { _discordWebhookUrl = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private string _discordScopeName = "";
+        public string DiscordScopeName {
+            get => _discordScopeName;
+            set { _discordScopeName = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private bool _discordVerbosePerFrame = false;

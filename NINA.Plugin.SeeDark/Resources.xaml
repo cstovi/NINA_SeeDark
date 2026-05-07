@@ -143,12 +143,17 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Discord webhook URL:" VerticalAlignment="Center" Margin="0,0,8,4"/>
                 <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding DiscordWebhookUrl, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Verbose per-frame lines:" VerticalAlignment="Center" Margin="0,4,8,0"/>
-                <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding DiscordVerbosePerFrame, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"/>
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="Optional: also send each per-frame auto dark line to Discord. Other log lines still mirror when a webhook URL is set. Very chatty; a dedicated channel is recommended."
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Scope name:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DiscordScopeName, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="Optional. If set, prepended to all Discord notifications as &quot;Name - message&quot;. Sensor temp notifications already include scope model and serial (e.g. S30_5b948371)."
+                           Foreground="#888" VerticalAlignment="Top" Margin="8,4,0,4" FontSize="11" TextWrapping="Wrap"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Verbose per-frame lines:" VerticalAlignment="Center" Margin="0,4,8,0"/>
+                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding DiscordVerbosePerFrame, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="Optional: also send each per-frame auto dark line to Discord. Other log lines still mirror when a webhook URL is set. Very chatty; a dedicated channel is recommended."
                            Foreground="#888" VerticalAlignment="Top" Margin="8,4,0,0" FontSize="11" TextWrapping="Wrap"/>
             </Grid>
 
