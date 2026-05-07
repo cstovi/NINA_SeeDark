@@ -96,11 +96,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         }
 
         private async Task ExecuteAutoCaptureCore(IProgress<ApplicationStatus> progress, CancellationToken token) {
-            const int targetFrames = 30;
+            int targetFrames = _plugin.AutoDarkTargetFrames;
             const int minFrames = 20;
             const int maxAttemptsDefault = 50;
             const int maxAttemptsNearTarget = 60;
-            const int nearTargetFloor = 25;
+            int nearTargetFloor = Math.Clamp(targetFrames - 5, minFrames, Math.Max(minFrames, targetFrames - 1));
             const int maxConsecutiveBucketMisses = 3;
 
             double startTemp = GetSensorTempFromMediator();

@@ -61,6 +61,7 @@ namespace NINA.Plugin.SeeDark {
             TempBucketSize        = Settings.TempBucketSize;
             StackTolerance        = Settings.StackTolerance;
             PreBucketLeadC        = Settings.PreBucketLeadC;
+            AutoDarkTargetFrames  = Settings.AutoDarkTargetFrames;
             _isInitializing = false;
             SyncAndSaveSettings();
         }
@@ -114,6 +115,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.TempBucketSize      = _tempBucketSize;
                 Settings.StackTolerance      = _stackTolerance;
                 Settings.PreBucketLeadC      = _preBucketLeadC;
+                Settings.AutoDarkTargetFrames = _autoDarkTargetFrames;
                 Settings.Save();
             } finally {
                 _isSyncing = false;
@@ -126,6 +128,7 @@ namespace NINA.Plugin.SeeDark {
             Settings.PreBucketLeadC = DeriveInternalPreBucketLeadC();
             Settings.MinFrameCount  = DeriveInternalMinFrameCount();
             Settings.MaxFrameCount  = DeriveInternalMaxFrameCount();
+            Settings.AutoDarkTargetFrames = NormalizeAutoDarkTargetFrames(Settings.AutoDarkTargetFrames <= 0 ? 30 : Settings.AutoDarkTargetFrames);
         }
 
         private static int NormalizeBucketSize(int value) => value == 3 ? 3 : 2;
@@ -133,6 +136,8 @@ namespace NINA.Plugin.SeeDark {
         private static int DeriveInternalPreBucketLeadC() => 2;
         private static int DeriveInternalMinFrameCount() => 20;
         private static int DeriveInternalMaxFrameCount() => 50;
+
+        private static int NormalizeAutoDarkTargetFrames(int value) => Math.Clamp(value, 20, 50);
         private static DarkExecutionMode NormalizeExecutionMode(DarkExecutionMode value)
             => value == DarkExecutionMode.Manual ? DarkExecutionMode.Manual : DarkExecutionMode.Auto;
 
@@ -260,6 +265,12 @@ namespace NINA.Plugin.SeeDark {
         public int PreBucketLeadC {
             get => _preBucketLeadC;
             set { _preBucketLeadC = DeriveInternalPreBucketLeadC(); RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private int _autoDarkTargetFrames = 30;
+        public int AutoDarkTargetFrames {
+            get => _autoDarkTargetFrames;
+            set { _autoDarkTargetFrames = NormalizeAutoDarkTargetFrames(value); RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
     }
 }
