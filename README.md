@@ -10,14 +10,14 @@ At runtime, it checks for a matching master dark by:
 - exact scope ID,
 - max age (`MaxAgeDays`).
 
-If a valid master exists, it skips capture. If not, it captures (Auto) or can run child instructions (Manual path kept for legacy sequences).
+If a valid master exists, it skips capture. If not, it captures internally using the current Auto workflow.
 
 ## Main Components
 
 - `SeeDark Dark Manager` (sequence container)
   - Decision gate for "is dark needed?"
-  - `Auto`: captures darks internally
-  - `Manual`: child-instruction path (legacy/advanced path; currently hidden in normal container UI)
+  - Auto capture is the primary runtime behavior for current releases
+  - Legacy Manual child-instruction path still exists internally for backward compatibility, but is hidden from the normal UI
 - `SeeDark Stack Master Darks` (sequence instruction)
   - Scans raw dark FITS and builds master FITS
 
@@ -32,8 +32,9 @@ If a valid master exists, it skips capture. If not, it captures (Auto) or can ru
 
 Notes:
 
-- New containers default to Auto behavior.
+- Current container workflow is Auto dark capture.
 - Current simple UI exposes exposure/gain only on the container.
+- Manual mode is not a normal user-facing mode at this time and should be treated as legacy/internal behavior.
 
 ## Auto Capture Behavior
 
