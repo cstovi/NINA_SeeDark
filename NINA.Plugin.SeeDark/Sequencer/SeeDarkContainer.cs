@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using NINA.Core.Model;
 using NINA.Core.Model.Equipment;
 using NINA.Equipment.Model;
+using NINA.Image.Interfaces;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Container.ExecutionStrategy;
 using NINA.Sequencer.SequenceItem;
@@ -159,8 +160,9 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
 
+                IExposureData? exposureData = null;
                 try {
-                    await _plugin.ImagingMediator.CaptureImage(capture, token, progress);
+                    exposureData = await _plugin.ImagingMediator.CaptureImage(capture, token, progress);
                 } catch (Exception ex) {
                     Log($"⚠️ Auto dark capture failed on frame {attempts}: {ex.Message}");
                     break;
@@ -168,7 +170,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 double frameTemp = GetSensorTempFromMediator();
                 if (double.IsNaN(frameTemp)) {
-                    Log($"⚠️ Frame {attempts}: temperature unavailable; counting frame toward target.");
+                    Log($"⚠️ Frame {attempts}: temperature unavailable; saving and counting frame toward target.");
+                    await SaveRawDarkAsync(exposureData, token);
                     goodFrames++;
                     lifetimeAccepted++;
                     ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
@@ -178,11 +181,17 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 int frameBucket = TemperatureBucketing.ToBucket(frameTemp, bucketStepC);
                 if (proactiveWarmup && frameBucket < targetBucket) {
                     consecutiveBucketMisses = 0;
-                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — warming toward {targetBucket}°C (frames not counted until target band)", discordVerboseOnly: true);
+                    if (LacksAcceptableMaster(frameBucket, masters, masterCutoff, scopeId)) {
+                        await SaveRawDarkAsync(exposureData, token);
+                        Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — warmup frame saved (bucket {frameBucket}°C has no master); warming toward {targetBucket}°C", discordVerboseOnly: true);
+                    } else {
+                        Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — warming toward {targetBucket}°C (bucket {frameBucket}°C already has a master; frame discarded)", discordVerboseOnly: true);
+                    }
                     ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
                     continue;
                 }
                 if (frameBucket == targetBucket) {
+                    await SaveRawDarkAsync(exposureData, token);
                     goodFrames++;
                     lifetimeAccepted++;
                     consecutiveBucketMisses = 0;
@@ -198,6 +207,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                             break;
                         }
                     } else {
+                        await SaveRawDarkAsync(exposureData, token);
                         int previousTarget = targetBucket;
                         targetBucket = frameBucket;
                         goodFrames = 1;
@@ -384,6 +394,19 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             Log($"🔭 Scanned {results.Count} master dark(s) from {folder}");
             return results.ToArray();
+        }
+
+        private async Task SaveRawDarkAsync(IExposureData? exposureData, CancellationToken token) {
+            if (exposureData == null) return;
+            try {
+                var imageData = await exposureData.ToImageData(null, token);
+                if (imageData == null) return;
+                // Route through NINA's save pipeline so DARK naming/path comes from NINA File settings.
+                var prepareTask = Task.FromResult<IRenderedImage>(null!);
+                await _plugin.ImageSaveMediator.Enqueue(imageData, prepareTask, null, token);
+            } catch (Exception ex) {
+                Log($"⚠️ Failed to save raw dark frame: {ex.Message}");
+            }
         }
 
         private void Log(string message, bool discordVerboseOnly = false, bool fileOnly = false) {

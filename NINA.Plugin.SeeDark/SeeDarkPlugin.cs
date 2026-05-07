@@ -12,6 +12,7 @@ using NINA.Equipment.Interfaces.Mediator;
 using NINA.Plugin;
 using NINA.Plugin.Interfaces;
 using NINA.Profile.Interfaces;
+using NINA.WPF.Base.Interfaces.Mediator;
 using NINA.Plugin.SeeDark.Sequencer;
 
 namespace NINA.Plugin.SeeDark {
@@ -29,6 +30,7 @@ namespace NINA.Plugin.SeeDark {
         public ICameraMediator CameraMediator { get; }
         public IImagingMediator ImagingMediator { get; }
         public IFilterWheelMediator FilterWheelMediator { get; }
+        public IImageSaveMediator ImageSaveMediator { get; }
         public IProfileService ProfileService { get; }
         public SeeDarkSettings Settings { get; }
 
@@ -37,10 +39,12 @@ namespace NINA.Plugin.SeeDark {
             ICameraMediator cameraMediator,
             IImagingMediator imagingMediator,
             IFilterWheelMediator filterWheelMediator,
+            IImageSaveMediator imageSaveMediator,
             IProfileService profileService) {
             CameraMediator = cameraMediator;
             ImagingMediator = imagingMediator;
             FilterWheelMediator = filterWheelMediator;
+            ImageSaveMediator = imageSaveMediator;
             ProfileService = profileService;
             Settings = SeeDarkSettings.Load(profileService.ActiveProfile.ImageFileSettings.FilePath);
             NormalizeSimpleThermalSettings();
