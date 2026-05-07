@@ -320,7 +320,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 LacksAcceptableMaster(nextWarmerBucket, masters, cutoff, scopeId);
 
             if (!inWindow && !autoBypassHighInBand) {
-                Log($"⏳ Missing dark for {bucket}°C bucket, but sensor {temp:F1}°C outside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C (need temp < {bucket - startBelowNominalC:F1}°C) — waiting");
+                Log($"⏳ Missing dark for {bucket}°C bucket, but sensor {temp:F1}°C outside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C (need temp < {bucket - startBelowNominalC:F1}°C) — skipping this run");
                 return false;
             }
 
