@@ -244,7 +244,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         private static void ReportAutoDarkCaptureProgress(IProgress<ApplicationStatus>? progress, int accepted, int target) {
             progress?.Report(new ApplicationStatus {
                 Source = "SeeDark",
-                Status = $"Auto darks {accepted}/{target}",
+                Status = "Auto darks",
                 Progress = accepted,
                 MaxProgress = Math.Max(1, target),
                 ProgressType = ApplicationStatus.StatusProgressType.ValueOfMaxValue,
