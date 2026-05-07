@@ -253,7 +253,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
         private bool NeedsDarks() {
             double temp = GetSensorTempFromMediator();
-            Log($"⚙️ Execution mode: {ExecutionMode}");
+            Log($"⚙️ Execution mode: {ExecutionMode}", discordVerboseOnly: true);
             if (double.IsNaN(temp)) {
                 Log("⚠️ Camera temperature unavailable — darks needed!");
                 return true;
