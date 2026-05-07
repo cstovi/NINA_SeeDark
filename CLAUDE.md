@@ -91,6 +91,7 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `DefaultExecutionMode` | int | 1 | Default for new containers (`1=Auto`, `0=Manual`); no UI — reserved for future advanced mode |
 | `EnableLifecycleManagement` | bool | false | Opt-in: archive used raws and allow archive-based recovery rebuilds |
 | `DeleteArchivedRawsAfterMaxAge` | bool | false | Opt-in: delete archived raws older than `MaxAgeDays` |
+| `WriteNinaLiveMasters` | bool | false | Opt-in: also write a NINA-format master (BITPIX=16, BZERO=32768) alongside the always-present SIRIL/PixInsight float32 master |
 | `AutoDarkMaxWarmerBucketSteps` | int | 0 | Auto capture may follow rising temp into up to N warmer bands (vs. run-start anchor) when no master exists there; 0 = stay in starting band only |
 | `TempBucketSize` | int | 2 | User-selectable: 2 or 3 in simple mode |
 | `StackTolerance` | int | 2 | Internal/derived from bucket size (not shown in UI) |

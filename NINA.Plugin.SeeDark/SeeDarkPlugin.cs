@@ -56,6 +56,7 @@ namespace NINA.Plugin.SeeDark {
             DefaultExecutionMode  = NormalizeExecutionMode((DarkExecutionMode)Settings.DefaultExecutionMode);
             EnableLifecycleManagement = Settings.EnableLifecycleManagement;
             DeleteArchivedRawsAfterMaxAge = Settings.DeleteArchivedRawsAfterMaxAge;
+            WriteNinaLiveMasters  = Settings.WriteNinaLiveMasters;
             DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
             DiscordScopeName      = Settings.DiscordScopeName;
             DiscordVerbosePerFrame = Settings.DiscordVerbosePerFrame;
@@ -111,6 +112,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.DefaultExecutionMode = (int)_defaultExecutionMode;
                 Settings.EnableLifecycleManagement = _enableLifecycleManagement;
                 Settings.DeleteArchivedRawsAfterMaxAge = _deleteArchivedRawsAfterMaxAge;
+                Settings.WriteNinaLiveMasters = _writeNinaLiveMasters;
                 Settings.DiscordWebhookUrl   = _discordWebhookUrl;
                 Settings.DiscordScopeName    = _discordScopeName;
                 Settings.DiscordVerbosePerFrame = _discordVerbosePerFrame;
@@ -239,6 +241,12 @@ namespace NINA.Plugin.SeeDark {
         public bool DeleteArchivedRawsAfterMaxAge {
             get => _deleteArchivedRawsAfterMaxAge;
             set { _deleteArchivedRawsAfterMaxAge = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private bool _writeNinaLiveMasters = false;
+        public bool WriteNinaLiveMasters {
+            get => _writeNinaLiveMasters;
+            set { _writeNinaLiveMasters = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private string _discordWebhookUrl = "";

@@ -233,12 +233,14 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     ["STACKCNT"] = (long)pixelArrays.Count,
                 };
 
-                var sirilPath    = Path.Combine(masterFolder, $"{prefix}SIRIL_{ts}.fit");
-                var ninalivePath = Path.Combine(masterFolder, $"{prefix}NINALIVE_{ts}.fit");
+                var sirilPath = Path.Combine(masterFolder, $"{prefix}SIRIL_{ts}.fit");
                 WriteFitsFloat(sirilPath, median, width, height, extraHeaders);
                 Log($"💾 Written SIRIL: {Path.GetFileName(sirilPath)}");
-                WriteFitsUInt16(ninalivePath, median, width, height, extraHeaders);
-                Log($"💾 Written NINALIVE: {Path.GetFileName(ninalivePath)}");
+                if (_plugin.Settings.WriteNinaLiveMasters) {
+                    var ninalivePath = Path.Combine(masterFolder, $"{prefix}NINALIVE_{ts}.fit");
+                    WriteFitsUInt16(ninalivePath, median, width, height, extraHeaders);
+                    Log($"💾 Written NINALIVE: {Path.GetFileName(ninalivePath)}");
+                }
 
                 if (lifecycleEnabled) {
                     foreach (var used in selectedFrames.Where(f => IsUnderDirectory(f.Path, rawFolder) && !IsUnderDirectory(f.Path, archiveFolder))) {
