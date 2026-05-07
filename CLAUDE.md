@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - `start = (bucket - halfStep) - PreBucketLeadC`
    - `end = bucket + halfStep` (exclusive)
 7. `ExecutionMode=Manual`: executes children only if no matching master exists and sensor temp is inside start window
-8. `ExecutionMode=Auto`: runs internal dark capture loop (DARK filter/type, gain/exposure from container, offset default, accepted-frame goal per bucket from `AutoDarkTargetFrames` (default 30), max 50 capture attempts raised to 60 when near goal, min 20 to stack, temperature drift guard)
+8. `ExecutionMode=Auto`: runs internal dark capture loop (DARK filter/type, gain/exposure from container, offset default, target 30 accepted frames per **segment** (fixed), **30 capture attempts per segment** (resets on retarget), min 20 to stack, drift guard). Starting bucket is fixed at run start (`anchorBucket`); retarget to a **warmer** bucket with no master is allowed only within `AutoDarkMaxWarmerBucketSteps` (0–3) discrete bands above that anchor; **cooler** missing-master retargets always allowed. Each allowed retarget resets segment attempt count.
 9. **Auto only — proactive next bucket:** If the **current** bucket already has an acceptable master but the **next warmer** bucket does not, start Auto capture immediately (no start-window wait), target the next warmer bucket, and take **warmup** exposures while still colder (not counted toward target / no drift stop) until the sensor reaches the target band.
 
 ## Current Session State (May 2026)
@@ -91,7 +91,7 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `DefaultExecutionMode` | int | 1 | Default for new containers (`1=Auto`, `0=Manual`); no UI — reserved for future advanced mode |
 | `EnableLifecycleManagement` | bool | false | Opt-in: archive used raws and allow archive-based recovery rebuilds |
 | `DeleteArchivedRawsAfterMaxAge` | bool | false | Opt-in: delete archived raws older than `MaxAgeDays` |
-| `AutoDarkTargetFrames` | int | 30 | Accepted-frame goal per bucket in Auto capture (clamped 20–50); multi-bucket drift can yield more frames per run |
+| `AutoDarkMaxWarmerBucketSteps` | int | 0 | Auto capture may follow rising temp into up to N warmer bands (vs. run-start anchor) when no master exists there; 0 = stay in starting band only |
 | `TempBucketSize` | int | 2 | User-selectable: 2 or 3 in simple mode |
 | `StackTolerance` | int | 2 | Internal/derived from bucket size (not shown in UI) |
 | `PreBucketLeadC` | int | 2 | Internal fixed pre-range lead (hidden in UI) |

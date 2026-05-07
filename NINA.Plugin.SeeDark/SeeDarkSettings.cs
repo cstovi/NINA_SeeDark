@@ -25,8 +25,8 @@ namespace NINA.Plugin.SeeDark {
         public int StackTolerance { get; set; } = 2;
         public int PreBucketLeadC { get; set; } = 2;
         public int DefaultExecutionMode { get; set; } = 1; // 0=Manual, 1=Auto
-        /// <summary>Accepted-frame goal per bucket during Auto dark capture (typical 30).</summary>
-        public int AutoDarkTargetFrames { get; set; } = 30;
+        /// <summary>How many discrete temp bands warmer than the run's starting bucket Auto may retarget into (0–3).</summary>
+        public int AutoDarkMaxWarmerBucketSteps { get; set; } = 0;
 
         private static string SettingsPath => Path.Combine(DataFolder, "settings.json");
 

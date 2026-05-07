@@ -96,11 +96,9 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         }
 
         private async Task ExecuteAutoCaptureCore(IProgress<ApplicationStatus> progress, CancellationToken token) {
-            int targetFrames = _plugin.AutoDarkTargetFrames;
+            const int targetFrames = 30;
             const int minFrames = 20;
-            const int maxAttemptsDefault = 50;
-            const int maxAttemptsNearTarget = 60;
-            int nearTargetFloor = Math.Clamp(targetFrames - 5, minFrames, Math.Max(minFrames, targetFrames - 1));
+            const int maxAttemptsPerSegment = 30;
             const int maxConsecutiveBucketMisses = 3;
 
             double startTemp = GetSensorTempFromMediator();
@@ -127,10 +125,12 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 return;
             }
 
+            int maxWarmerSteps = Math.Clamp(_plugin.Settings.AutoDarkMaxWarmerBucketSteps, 0, 3);
+
             if (proactiveWarmup)
                 Log($"🌡️ Proactive Auto: warming toward {targetBucket}°C bucket (current {currentBucket}°C already has a master; capturing until temp reaches target band).");
-            Log($"🤖 Auto mode starting dark capture: target {targetFrames}, min {minFrames}, max attempts {maxAttemptsDefault} ({maxAttemptsNearTarget} if accepted ≥{nearTargetFloor} toward target), target bucket {targetBucket}°C");
-            Log("🔁 If the sensor drifts to another temperature bucket, capture continues when that bucket also has no acceptable master (same exposure, gain, scope, max age).");
+            Log($"🤖 Auto mode starting dark capture: target {targetFrames} accepted per segment, min {minFrames}, max {maxAttemptsPerSegment} attempts per segment, starting bucket {targetBucket}°C, warmer continuation ≤{maxWarmerSteps} band(s) above that bucket.");
+            Log("🔁 Retargeting to another bucket (no master there) resets the segment attempt count; cooler buckets always allowed. Warmer retargets beyond your setting are blocked.");
 
             try {
                 await _plugin.FilterWheelMediator.ChangeFilter(darkFilter, token, progress);
@@ -144,13 +144,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             int lifetimeAccepted = 0;
             int attempts = 0;
             int consecutiveBucketMisses = 0;
+            int anchorBucket = targetBucket;
 
             ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
 
-            int AttemptCap(int good) =>
-                good >= nearTargetFloor && good < targetFrames ? maxAttemptsNearTarget : maxAttemptsDefault;
-
-            while (!token.IsCancellationRequested && attempts < AttemptCap(goodFrames) && goodFrames < targetFrames) {
+            while (!token.IsCancellationRequested && attempts < maxAttemptsPerSegment && goodFrames < targetFrames) {
                 attempts++;
                 var capture = new CaptureSequence {
                     ExposureTime = TargetExposure,
@@ -191,13 +189,24 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target) — accepted ({goodFrames}/{targetFrames})", discordVerboseOnly: true);
                     ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
                 } else if (LacksAcceptableMaster(frameBucket, masters, masterCutoff, scopeId)) {
-                    int previousTarget = targetBucket;
-                    targetBucket = frameBucket;
-                    goodFrames = 1;
-                    lifetimeAccepted++;
-                    consecutiveBucketMisses = 0;
-                    Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — drifted out of {previousTarget}°C target band; bucket {frameBucket}°C also has no acceptable master in the library — retargeting capture here ({goodFrames}/{targetFrames}).", discordVerboseOnly: true);
-                    ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
+                    if (!MayRetargetToMissingMasterBucket(frameBucket, anchorBucket, bucketStepC, maxWarmerSteps)) {
+                        consecutiveBucketMisses++;
+                        Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — warmer than starting bucket {anchorBucket}°C beyond allowed +{maxWarmerSteps} band(s); not retargeting (drift {consecutiveBucketMisses}/{maxConsecutiveBucketMisses}).", discordVerboseOnly: true);
+                        ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
+                        if (consecutiveBucketMisses >= maxConsecutiveBucketMisses) {
+                            Log($"⏹️ Auto capture stopping: sustained drift with warmer bucket {frameBucket}°C blocked by warmer-step limit (anchor {anchorBucket}°C, max +{maxWarmerSteps}).");
+                            break;
+                        }
+                    } else {
+                        int previousTarget = targetBucket;
+                        targetBucket = frameBucket;
+                        goodFrames = 1;
+                        lifetimeAccepted++;
+                        consecutiveBucketMisses = 0;
+                        Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — drifted out of {previousTarget}°C target band; bucket {frameBucket}°C also has no acceptable master in the library — retargeting here ({goodFrames}/{targetFrames}); segment attempts reset to 0.", discordVerboseOnly: true);
+                        attempts = 0;
+                        ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
+                    }
                 } else {
                     consecutiveBucketMisses++;
                     Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C (target {targetBucket}°C) — drift count {consecutiveBucketMisses}/{maxConsecutiveBucketMisses}", discordVerboseOnly: true);
@@ -209,11 +218,27 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 }
             }
 
-            if (goodFrames >= minFrames) {
-                Log($"✅ Auto dark capture complete with {goodFrames} accepted frame(s) for bucket {targetBucket}°C ({lifetimeAccepted} accepted in total this run across bucket(s); raws saved).");
-            } else {
-                Log($"⚠️ Auto dark capture stopped after {attempts} attempt(s) with {goodFrames} accepted for the final bucket {targetBucket}°C (need {minFrames}+ there to stack that group). {lifetimeAccepted} frame(s) accepted in total this run across bucket(s) — earlier buckets have their own partial sets on disk. Run again when temperature is stable.");
+            if (!token.IsCancellationRequested && goodFrames < targetFrames && attempts >= maxAttemptsPerSegment) {
+                Log($"⚠️ Auto dark capture hit segment attempt limit ({maxAttemptsPerSegment}) for bucket {targetBucket}°C with {goodFrames}/{targetFrames} accepted — run again if needed.");
             }
+
+            if (goodFrames >= targetFrames) {
+                Log($"✅ Auto dark capture complete with {goodFrames} accepted frame(s) for bucket {targetBucket}°C ({lifetimeAccepted} accepted in total this run across bucket(s); raws saved).");
+            } else if (goodFrames >= minFrames) {
+                Log($"✅ Auto dark capture stopped with {goodFrames} accepted for bucket {targetBucket}°C (below target {targetFrames} but ≥{minFrames} to stack; {lifetimeAccepted} accepted in total across bucket(s)).");
+            } else {
+                Log($"⚠️ Auto dark capture stopped after {attempts} attempt(s) in the final segment with {goodFrames} accepted for bucket {targetBucket}°C (need {minFrames}+ there to stack that group). {lifetimeAccepted} frame(s) accepted in total this run across bucket(s) — earlier buckets have their own partial sets on disk. Run again when temperature is stable.");
+            }
+        }
+
+        /// <summary>
+        /// Cooler buckets than <paramref name="anchorBucket"/> always allowed; warmer buckets allowed only within <paramref name="maxWarmerSteps"/> discrete bands above anchor.
+        /// </summary>
+        private static bool MayRetargetToMissingMasterBucket(int frameBucket, int anchorBucket, int bucketStepC, int maxWarmerSteps) {
+            if (frameBucket <= anchorBucket) return true;
+            int step = Math.Max(1, bucketStepC);
+            int warmerSteps = (frameBucket - anchorBucket) / step;
+            return warmerSteps <= maxWarmerSteps;
         }
 
         private static void ReportAutoDarkCaptureProgress(IProgress<ApplicationStatus>? progress, int accepted, int target) {
