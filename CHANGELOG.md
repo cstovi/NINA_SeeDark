@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.7.1 - 2026-05-07
+
+- `_archived` subfolder is now only created inside the raw darks folder when lifecycle management is enabled, avoiding unused folder creation for users who never enable it.
+
 ## v1.7.0 - 2026-05-07
 
 - Skip notification now confirms both checked buckets: "Matching dark exists — skipping (22°C ✓, 24°C ✓)".
