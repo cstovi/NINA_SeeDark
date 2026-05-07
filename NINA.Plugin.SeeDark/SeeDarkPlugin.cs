@@ -54,7 +54,6 @@ namespace NINA.Plugin.SeeDark {
             TargetExposure        = Settings.TargetExposure;
             MaxAgeDays            = Settings.MaxAgeDays;
             Gain                  = Settings.Gain;
-            RawDarksFolder        = Settings.RawDarksFolder;
             MasterLibraryFolder   = Settings.MasterLibraryFolder;
             MinFrameCount         = Settings.MinFrameCount;
             MaxFrameCount         = Settings.MaxFrameCount;
@@ -110,7 +109,6 @@ namespace NINA.Plugin.SeeDark {
                 Settings.TargetExposure      = _targetExposure;
                 Settings.MaxAgeDays          = _maxAgeDays;
                 Settings.Gain                = _gain;
-                Settings.RawDarksFolder      = _rawDarksFolder;
                 Settings.MasterLibraryFolder = _masterLibraryFolder;
                 Settings.MinFrameCount       = _minFrameCount;
                 Settings.MaxFrameCount       = _maxFrameCount;
@@ -214,12 +212,6 @@ namespace NINA.Plugin.SeeDark {
         public int Gain {
             get => _gain;
             set { _gain = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
-        }
-
-        private string _rawDarksFolder = "";
-        public string RawDarksFolder {
-            get => _rawDarksFolder;
-            set { _rawDarksFolder = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private string _masterLibraryFolder = "";

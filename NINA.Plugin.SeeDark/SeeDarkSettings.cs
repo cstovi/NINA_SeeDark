@@ -12,7 +12,6 @@ namespace NINA.Plugin.SeeDark {
         public double TargetExposure { get; set; } = 20.0;
         public int MaxAgeDays { get; set; } = 180;
         public int Gain { get; set; } = 200;
-        public string RawDarksFolder { get; set; } = "";
         public string MasterLibraryFolder { get; set; } = "";
         public int MinFrameCount { get; set; } = 20;
         public int MaxFrameCount { get; set; } = 50;
@@ -42,7 +41,6 @@ namespace NINA.Plugin.SeeDark {
                     : new SeeDarkSettings();
             } catch { s = new SeeDarkSettings(); }
 
-            if (string.IsNullOrEmpty(s.RawDarksFolder))      s.RawDarksFolder      = Path.Combine(ninaImagePath, "DARKs");
             if (string.IsNullOrEmpty(s.MasterLibraryFolder)) s.MasterLibraryFolder = Path.Combine(ninaImagePath, "MASTERs");
 
             try {
