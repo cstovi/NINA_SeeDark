@@ -95,7 +95,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             try {
                 await ExecuteAutoCaptureCore(progress, token);
             } finally {
-                progress?.Report(new ApplicationStatus());
+                ClearAutoDarkCaptureProgress(progress);
             }
         }
 
@@ -189,7 +189,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     ImageType = CaptureSequence.ImageTypes.DARK,
                 };
 
-                ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
+                ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames, "capturing");
 
                 IExposureData? exposureData = null;
                 try {
@@ -285,12 +285,22 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             return warmerSteps <= maxWarmerSteps;
         }
 
-        private static void ReportAutoDarkCaptureProgress(IProgress<ApplicationStatus>? progress, int accepted, int target) {
+        private static void ReportAutoDarkCaptureProgress(IProgress<ApplicationStatus>? progress, int accepted, int target, string phase = "accepted") {
             progress?.Report(new ApplicationStatus {
                 Source = "SeeDark",
-                Status = "Auto darks",
+                Status = $"Auto darks ({phase})",
                 Progress = accepted,
                 MaxProgress = Math.Max(1, target),
+                ProgressType = ApplicationStatus.StatusProgressType.ValueOfMaxValue,
+            });
+        }
+
+        private static void ClearAutoDarkCaptureProgress(IProgress<ApplicationStatus>? progress) {
+            progress?.Report(new ApplicationStatus {
+                Source = "SeeDark",
+                Status = string.Empty,
+                Progress = 0,
+                MaxProgress = 1,
                 ProgressType = ApplicationStatus.StatusProgressType.ValueOfMaxValue,
             });
         }
