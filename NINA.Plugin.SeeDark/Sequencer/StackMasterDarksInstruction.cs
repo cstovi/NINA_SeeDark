@@ -113,12 +113,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             foreach (var key in uniqueKeys) {
                 token.ThrowIfCancellationRequested();
                 var matchingMaster = FindNewestMaster(masterFolder, key.TempBucket, key.Exposure, key.Gain, key.ScopeId);
-                bool hasFreshMaster = matchingMaster != null && matchingMaster.DateCreated >= masterCutoff;
-                if (hasFreshMaster) {
-                    Log($"✅ Existing master is fresh for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} ({matchingMaster!.DateCreated:yyyy-MM-dd}) — skipping rebuild");
-                    continue;
-                }
-
                 var validActiveFrames = activeFrameInfos
                     .Where(f => f.TempBucket == key.TempBucket &&
                                 Math.Abs(f.Exposure - key.Exposure) < 0.5 &&
@@ -146,10 +140,28 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     ? validActiveFrames.Count + validArchivedFrames.Count
                     : validActiveFrames.Count;
                 string sourceText = lifecycleEnabled ? "active+archive" : "active";
+                bool hasFreshMaster = matchingMaster != null && matchingMaster.DateCreated >= masterCutoff;
+                bool hasKnownContributorCount = matchingMaster?.StackCount is > 0;
+                bool shouldRebuildForMoreRaws = hasFreshMaster && hasKnownContributorCount && eligibleCount > matchingMaster!.StackCount!.Value;
+                if (hasFreshMaster && !shouldRebuildForMoreRaws) {
+                    if (!hasKnownContributorCount) {
+                        Log($"✅ Existing master is fresh for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} ({matchingMaster!.DateCreated:yyyy-MM-dd}) but STACKCNT is missing/invalid — skipping rebuild (legacy-safe)");
+                    } else {
+                        Log($"✅ Existing master is fresh for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} ({matchingMaster!.DateCreated:yyyy-MM-dd}) with STACKCNT={matchingMaster!.StackCount}; eligible {sourceText} raws={eligibleCount} — skipping rebuild");
+                    }
+                    continue;
+                }
+                if (shouldRebuildForMoreRaws) {
+                    Log($"🔄 Existing master is fresh for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} but STACKCNT={matchingMaster!.StackCount} and eligible {sourceText} raws={eligibleCount} (cap {maxFrameCount}) — rebuilding");
+                }
                 Log($"🔭 Group {key.TempBucket}°C [{lowerBound:F1},{upperBound:F1}) / {key.Exposure:F0}s / gain {key.Gain} / {key.ScopeId}: using {selectedFrames.Count}/{eligibleCount} most recent valid frame(s) from {sourceText}");
 
                 if (selectedFrames.Count < minFrameCount) {
-                    string reason = matchingMaster == null ? "missing" : "expired";
+                    string reason = matchingMaster == null
+                        ? "missing"
+                        : shouldRebuildForMoreRaws
+                            ? "more raws available"
+                            : "expired";
                     Log($"⚠️ Master {reason} for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId}, but only {selectedFrames.Count} valid cached frame(s); need {minFrameCount}. Run a new dark sequence.");
                     continue;
                 }
@@ -248,7 +260,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     }
                 }
                 string newestUsedDate = selectedFrames.Max(f => f.SessionTimestamp).ToString("yyyy-MM-dd");
-                string reasonText = matchingMaster == null ? "missing" : "expired";
+                string reasonText = matchingMaster == null
+                    ? "missing"
+                    : shouldRebuildForMoreRaws
+                        ? "more raws available"
+                        : "expired";
                 Log($"✅ Master Dark {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} was {reasonText}. Successfully rebuilt using cached raw frames from {newestUsedDate}.");
             }
 
@@ -324,6 +340,10 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     DateTime created = string.IsNullOrWhiteSpace(dateStr)
                         ? File.GetLastWriteTime(path)
                         : DateTime.Parse(dateStr, CultureInfo.InvariantCulture);
+                    int? stackCount = null;
+                    if (h.TryGetValue("STACKCNT", out var stackCountStr) && int.TryParse(stackCountStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedStackCount) && parsedStackCount > 0) {
+                        stackCount = parsedStackCount;
+                    }
 
                     if (masterBucket != bucket ||
                         Math.Abs(masterExposure - exposure) >= 0.5 ||
@@ -331,7 +351,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                         masterScope != scopeId) continue;
 
                     if (newest == null || created > newest.DateCreated)
-                        newest = new MasterInfo(path, created);
+                        newest = new MasterInfo(path, created, stackCount);
                 } catch { }
             }
             return newest;
@@ -589,6 +609,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             string Path, string Filter, DateTime SessionTimestamp,
             double Exposure, int TempBucket, int Gain, string ScopeId);
 
-        private record MasterInfo(string Path, DateTime DateCreated);
+        private record MasterInfo(string Path, DateTime DateCreated, int? StackCount);
     }
 }

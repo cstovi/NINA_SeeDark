@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 - Added same-night raw sufficiency checks in Auto mode so SeeDark can skip additional capture for a bucket when enough raws already exist for tonight, even before master rebuild runs.
 - Preserved warmer-bucket progression by allowing bounded overshoot in the current bucket up to 60 raws when the next warmer bucket still needs collection.
 - Updated Auto behavior docs to reflect same-night sufficiency guard, bounded overshoot, and end-of-session stacking guidance.
+- Added STACKCNT-gated master rebuild improvement: fresh masters now rebuild when valid contributor count metadata exists and more eligible raws are available than were used previously (legacy masters without STACKCNT remain missing/expired-only).
 
 ## v1.8.0 - 2026-05-07
 

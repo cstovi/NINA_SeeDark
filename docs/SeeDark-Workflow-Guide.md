@@ -81,6 +81,23 @@ Why this is preferred:
 - it still gives you fresh masters from the most recent valid raws,
 - it works well with same-night sufficiency checks.
 
+## Master rebuild policy
+
+`SeeDark Stack Master Darks` rebuilds when:
+
+- no matching master exists, or
+- matching master exists but is older than `MaxAgeDays`, or
+- matching master is fresh **and** has valid `STACKCNT`, and current eligible raws for that key now exceed `STACKCNT`.
+
+Legacy-safe rule:
+
+- if existing master has no usable `STACKCNT`, SeeDark does **not** guess contributor count and keeps the fresh master unchanged (missing/expired behavior still applies normally).
+
+Practical example:
+
+- if last master used 20 raws (`STACKCNT=20`) and you now have 40 valid raws, SeeDark rebuilds,
+- if `STACKCNT` is missing (older master), SeeDark skips this count-based trigger.
+
 ## Settings guide and implications
 
 Below are the main settings and what changing them usually means.

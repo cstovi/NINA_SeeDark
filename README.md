@@ -1,6 +1,6 @@
 # NINA SeeDark
 
-SeeDark helps Seestar users manage dark frames in N.I.N.A. by only capturing/stacking when masters are missing or stale.
+SeeDark helps Seestar users manage dark frames in N.I.N.A. by only capturing/stacking when masters are missing, stale, or can be materially improved with more valid raws.
 
 At runtime, it checks for a matching master dark by:
 
@@ -82,8 +82,17 @@ Same-night raw sufficiency guard:
 - scans NINA's darks location (`<NINA FilePath>\CALIBRATION\DARKs`) recursively for dark FITS,
 - groups by `(temp bucket, exposure, gain, scope ID)`,
 - uses most recent valid frames within age rules,
-- rebuilds only missing/expired masters,
+- rebuilds masters when:
+  - missing,
+  - expired, or
+  - fresh but `STACKCNT` is present and more eligible raws now exist than were previously stacked,
 - writes SIRIL/PixInsight float32 masters (and optional NINA live masters).
+
+Contributor metadata notes:
+
+- newly written masters include `STACKCNT` in FITS headers (`number of raws stacked`),
+- count-based rebuilds are only attempted when the existing master has a valid `STACKCNT` value,
+- legacy masters without `STACKCNT` remain on missing/expired-only rebuild behavior.
 
 Operational guidance:
 

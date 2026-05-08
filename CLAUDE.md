@@ -65,12 +65,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. Header fallbacks: `DATE-LOC`→`DATE-OBS`, `EXPTIME`→`EXPOSURE`, `CCD-TEMP`→`SET-TEMP`
 3. Session date rebasing: if `hour < 12`, subtract one day (sessions span midnight)
 4. Groups by `(tempBucket, exposure, gain, scopeId)` and uses the most recent valid frames (strict age window by FITS date)
-5. Rebuilds a master only when missing or expired (`MaxAgeDays`), otherwise keeps fresh masters unchanged
+5. Rebuilds a master when missing or expired (`MaxAgeDays`); additionally, for fresh masters with readable `STACKCNT`, rebuilds when current eligible raw count exceeds that `STACKCNT` (legacy masters without `STACKCNT` remain skip-safe)
 6. Per-pixel median stack → SIRIL master (BITPIX=-32, float32) + NINALIVE master (BITPIX=16, BZERO=32768)
 7. Deletes superseded masters for the same group key before writing
 8. If lifecycle management is enabled, archives contributing active raw frames under the NINA darks location `_archived` folder and uses archive for recovery
 9. If archive deletion is enabled, archived raws older than `MaxAgeDays` are removed
 10. Master discovery remains header-driven by scanning `MasterLibraryFolder` FITS files (no CSV index dependency)
+11. New masters include `STACKCNT` in FITS headers so future runs can detect whether more valid raws are now available for a quality-improving rebuild
 
 FITS I/O is inline — no NuGet. Uses `System.Buffers.Binary.BinaryPrimitives` for big-endian reads/writes. Headers are 80-char fixed-width cards in 2880-byte blocks.
 
