@@ -542,7 +542,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     return;
                 }
                 Directory.CreateDirectory(rawDarksFolder);
-                var saveStartUtc = DateTime.UtcNow.AddSeconds(-2);
                 var imageData = await exposureData.ToImageData(null, token);
                 if (imageData == null) return;
                 // Route through NINA's save pipeline for file creation, then relocate into configured RawDarksFolder.
@@ -554,10 +553,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 var savedPath = ResolveSavedImagePath(imageData);
                 if (string.IsNullOrWhiteSpace(savedPath) || !File.Exists(savedPath)) {
-                    savedPath = FindLatestSavedDarkPath(saveStartUtc);
-                }
-                if (string.IsNullOrWhiteSpace(savedPath) || !File.Exists(savedPath)) {
-                    Log("⚠️ Saved dark frame path could not be resolved for relocation.");
+                    Log("⚠️ Saved dark frame path could not be resolved from save result; relocation skipped.");
                     return;
                 }
                 if (IsUnderDirectory(savedPath, rawDarksFolder)) {
@@ -588,21 +584,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 }
             } catch { }
             return null;
-        }
-
-        private string? FindLatestSavedDarkPath(DateTime saveStartUtc) {
-            try {
-                var basePath = _plugin.ProfileService.ActiveProfile?.ImageFileSettings?.FilePath;
-                if (string.IsNullOrWhiteSpace(basePath) || !Directory.Exists(basePath))
-                    return null;
-
-                return Directory.GetFiles(basePath, "*.fit*", SearchOption.AllDirectories)
-                    .Where(path => File.GetLastWriteTimeUtc(path) >= saveStartUtc)
-                    .OrderByDescending(File.GetLastWriteTimeUtc)
-                    .FirstOrDefault();
-            } catch {
-                return null;
-            }
         }
 
         private void Log(string message, bool discordVerboseOnly = false, bool fileOnly = false) {
