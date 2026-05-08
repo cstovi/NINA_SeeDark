@@ -25,6 +25,21 @@ GitHub Actions run **after push**, not when files are saved locally.
 
 6. If **git_write** / **network** is blocked: print exact `git add`, `git commit`, `git push` commands so the user can run them immediately.
 
+7. **Versioning default:** when shipping completed code changes, bump **minor** version by default (e.g. `1.11.0` -> `1.12.0`) unless:
+   - the change is clearly patch-level and user requests patch, or
+   - the change is breaking/major and user requests major.
+
+8. **Tagging policy:** do **not** create/push a version tag unless the user explicitly asks to tag/release. A version bump commit alone is not a release.
+
+9. **Docs parity:** when behavior/settings/UI text changes, update user-facing text in the same session:
+   - `README.md`
+   - `CLAUDE.md`
+   - `docs/SeeDark-Workflow-Guide.md` (manual/workflow guide)
+
+10. **Build artifact requirement:** after meaningful code changes, always run a **Release** build to produce a fresh DLL.
+
+11. **Local test deploy requirement:** ensure the latest DLL is copied to local NINA plugin folder for testing. If copy fails due to file lock (NINA running), explicitly tell user to close NINA and rebuild, and report the exact DLL output path and timestamp.
+
 ## Do not
 
 - Force-push to shared branches.
