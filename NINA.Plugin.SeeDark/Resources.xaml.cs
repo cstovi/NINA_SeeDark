@@ -1,6 +1,8 @@
 using System.ComponentModel.Composition;
 using Microsoft.Win32;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace NINA.Plugin.SeeDark {
 
@@ -24,6 +26,17 @@ namespace NINA.Plugin.SeeDark {
             if (!string.IsNullOrWhiteSpace(selected)) {
                 plugin.RawDarksFolder = selected;
             }
+        }
+
+        private void CommitOnEnter_KeyDown(object sender, KeyEventArgs e) {
+            if (e.Key != Key.Enter)
+                return;
+            if (sender is not TextBox textBox)
+                return;
+
+            // Enter should commit the edit immediately without being required.
+            textBox.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+            e.Handled = true;
         }
 
         private static string? BrowseForFolder(string currentPath, string description) {
