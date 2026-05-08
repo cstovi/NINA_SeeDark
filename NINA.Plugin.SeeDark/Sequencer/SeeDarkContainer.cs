@@ -343,7 +343,19 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 if (needsDarks) {
                     Log("🌑 No matching dark found — darks needed!");
                 } else if (!lackCurrent) {
-                    Log($"✅ Matching dark exists — skipping ({bucket}°C ✓, {nextWarmerBucket}°C ✓)");
+                    var matchedMaster = masters
+                        .Where(r =>
+                            r.Temp == bucket &&
+                            Math.Abs(r.Exposure - TargetExposure) < 0.5 &&
+                            r.Gain == Gain &&
+                            r.Scope == scopeId &&
+                            r.DateCreated >= cutoff)
+                        .OrderByDescending(r => r.DateCreated)
+                        .FirstOrDefault();
+                    var matchedName = matchedMaster == null
+                        ? "unknown"
+                        : Path.GetFileName(matchedMaster.Path);
+                    Log($"✅ Matching dark exists ({matchedName}) — skipping ({bucket}°C ✓, {nextWarmerBucket}°C ✓)");
                 } else {
                     Log($"✅ Same-night raw sufficiency reached for {bucket}°C ({currentTonightCount}/{maxNeededFramesPerBucket}) — skipping additional capture this run.");
                 }
@@ -526,7 +538,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     var    date    = string.IsNullOrEmpty(dateStr)
                         ? DateTime.MinValue
                         : DateTime.Parse(dateStr, CultureInfo.InvariantCulture);
-                    results.Add(new MasterRecord(masterTemp, exp, gain, scopeId, date));
+                    results.Add(new MasterRecord(path, masterTemp, exp, gain, scopeId, date));
                 } catch { }
             }
 
@@ -598,6 +610,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             string ScopeId,
             DateTime SessionDate);
 
-        private record MasterRecord(int Temp, double Exposure, int Gain, string Scope, DateTime DateCreated);
+        private record MasterRecord(string Path, int Temp, double Exposure, int Gain, string Scope, DateTime DateCreated);
     }
 }
