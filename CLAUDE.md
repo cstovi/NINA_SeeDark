@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**SeeDark** conditionally triggers dark frame acquisition only when master darks are missing or stale for the current camera temperature, gain, scope, and exposure time. It also includes a FITS stacker that replaces the Python `master_darks_with_checks_and_ninalive.py` script.
+**SeeDark** conditionally triggers dark frame acquisition when master darks are missing/stale or when same-night raw dark sufficiency has not yet been met for the current camera temperature, gain, scope, and exposure time. It also includes a FITS stacker that replaces the Python `master_darks_with_checks_and_ninalive.py` script.
 
 ## Plugin Components (MEF)
 
@@ -28,8 +28,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - `start = (bucket - halfStep) - PreBucketLeadC`
    - `end = bucket + halfStep` (exclusive)
 7. `ExecutionMode=Manual`: executes children only if no matching master exists and sensor temp is inside start window
-8. `ExecutionMode=Auto`: runs internal dark capture loop (DARK filter/type, gain/exposure from container, offset default, target 30 accepted frames per **segment** (fixed), **30 capture attempts per segment** (resets on retarget), min 20 to stack, drift guard). Starting bucket is fixed at run start (`anchorBucket`); retarget to a **warmer** bucket with no master is allowed only within `AutoDarkMaxWarmerBucketSteps` (0–3) discrete bands above that anchor; **cooler** missing-master retargets always allowed. Each allowed retarget resets segment attempt count.
-9. **Auto only — proactive next bucket:** If the **current** bucket already has an acceptable master but the **next warmer** bucket does not, start Auto capture immediately (no start-window wait), target the next warmer bucket, and take **warmup** exposures while still colder (not counted toward target / no drift stop) until the sensor reaches the target band.
+8. `ExecutionMode=Auto`: runs internal dark capture loop (DARK filter/type, gain/exposure from container, offset default, target 30 accepted frames per **segment** (fixed), **30 capture attempts per segment** (resets on retarget), min 20 to stack, drift guard). Starting bucket is fixed at run start (`anchorBucket`); retarget to a **warmer** bucket with no acceptable master is allowed only within `AutoDarkMaxWarmerBucketSteps` (0–3) discrete bands above that anchor; **cooler** missing-master retargets always allowed. Each allowed retarget resets segment attempt count.
+9. **Auto raw sufficiency guard:** same-night raw counts are evaluated per key `(bucket, exposure, gain, scopeId)` using session-date rebasing (`hour < 12` => previous day). If a bucket already has enough same-night raws (`MaxFrameCount`, currently 50), additional capture for that bucket is skipped. To preserve uncooled thermal progression into a needed warmer bucket, bounded overshoot in the current bucket is allowed up to 60 raws.
+10. **Auto only — proactive next bucket:** If the **current** bucket is already satisfied (acceptable master, or enough same-night raws) but the **next warmer** bucket still needs collection, start Auto capture immediately (no start-window wait), target the next warmer bucket, and take **warmup** exposures while still colder (not counted toward target / no drift stop) until the sensor reaches the target band.
 
 ## Current Session State (May 2026)
 
