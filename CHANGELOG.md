@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.9.0 - 2026-05-08
+
+- Added same-night raw sufficiency checks in Auto mode so SeeDark can skip additional capture for a bucket when enough raws already exist for tonight, even before master rebuild runs.
+- Preserved warmer-bucket progression by allowing bounded overshoot in the current bucket up to 60 raws when the next warmer bucket still needs collection.
+- Updated Auto behavior docs to reflect same-night sufficiency guard, bounded overshoot, and end-of-session stacking guidance.
+
 ## v1.8.0 - 2026-05-07
 
 - Clarified the `Additional NINA masters` option tooltip to explain the NINA-format master is primarily for Livestack and potentially other NINA dark-consuming workflows.
