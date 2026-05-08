@@ -20,8 +20,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
     [ExportMetadata("Icon", "SeeDark_Icon")]
     [ExportMetadata("Category", "SeeDark")]
     public class StackMasterDarksInstruction : SequenceItem {
-        private const string ArchiveFolderName = "_archived";
-
         private readonly SeeDarkPlugin _plugin;
         private readonly string _logFilePath;
 
@@ -66,25 +64,15 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 Log("❌ Master library folder not configured — aborting"); return;
             }
             Directory.CreateDirectory(masterFolder);
-            string archiveFolder = Path.Combine(rawFolder, ArchiveFolderName);
-            bool lifecycleEnabled = _plugin.Settings.EnableLifecycleManagement;
-            if (lifecycleEnabled) Directory.CreateDirectory(archiveFolder);
-            bool deleteArchivedEnabled = lifecycleEnabled && _plugin.Settings.DeleteArchivedRawsAfterMaxAge;
+            bool deleteRawsEnabled = _plugin.Settings.DeleteRawsAfterMaxAge;
 
             Log($"🔭 Scanning {rawFolder}");
             if (!string.IsNullOrWhiteSpace(darkPattern))
                 Log($"🔭 NINA DARK pattern: {darkPattern}");
             Log($"🔭 Masters → {masterFolder}");
-            Log($"🔭 Lifecycle management: {(lifecycleEnabled ? "enabled" : "disabled")}");
-            Log($"🔭 Archive cleanup: {(deleteArchivedEnabled ? "enabled" : "disabled")}");
-            if (lifecycleEnabled) Log($"🔭 Archive → {archiveFolder}");
-            var allFiles = Directory.GetFiles(rawFolder, "*.fit*", SearchOption.AllDirectories)
-                .Where(p => !IsUnderDirectory(p, archiveFolder))
-                .ToArray();
-            var archivedFiles = lifecycleEnabled
-                ? Directory.GetFiles(archiveFolder, "*.fit*", SearchOption.AllDirectories)
-                : Array.Empty<string>();
-            Log($"🔭 Found {allFiles.Length} active FITS file(s), {archivedFiles.Length} archived FITS file(s)");
+            Log($"🔭 Raw cleanup: {(deleteRawsEnabled ? "enabled" : "disabled")}");
+            var allFiles = Directory.GetFiles(rawFolder, "*.fit*", SearchOption.AllDirectories);
+            Log($"🔭 Found {allFiles.Length} active FITS file(s)");
 
             var activeFrameInfos = new List<FrameInfo>();
             foreach (var path in allFiles) {
@@ -94,14 +82,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 if (!string.Equals(info.Filter, "DARK", StringComparison.OrdinalIgnoreCase)) continue;
                 activeFrameInfos.Add(info);
             }
-            var archivedFrameInfos = new List<FrameInfo>();
-            foreach (var path in archivedFiles) {
-                token.ThrowIfCancellationRequested();
-                var info = ReadFrameInfo(path);
-                if (info == null) continue;
-                if (!string.Equals(info.Filter, "DARK", StringComparison.OrdinalIgnoreCase)) continue;
-                archivedFrameInfos.Add(info);
-            }
 
             int bucketStepC = Math.Max(1, _plugin.Settings.TempBucketSize);
             int minFrameCount = Math.Max(1, _plugin.Settings.MinFrameCount);
@@ -109,9 +89,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             var maxAgeDays = Math.Max(1, _plugin.Settings.MaxAgeDays);
             var masterCutoff = DateTime.Now.AddDays(-maxAgeDays);
             var rawCutoff = DateTime.Now.AddDays(-maxAgeDays);
-            var allFrameInfos = lifecycleEnabled
-                ? activeFrameInfos.Concat(archivedFrameInfos).ToList()
-                : activeFrameInfos.ToList();
+            var allFrameInfos = activeFrameInfos.ToList();
             var uniqueKeys = allFrameInfos
                 .Select(f => (f.TempBucket, f.Exposure, f.Gain, f.ScopeId))
                 .Distinct()
@@ -128,26 +106,15 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                                 f.ScopeId == key.ScopeId &&
                                 f.SessionTimestamp >= rawCutoff)
                     .ToList();
-                var validArchivedFrames = archivedFrameInfos
-                    .Where(f => f.TempBucket == key.TempBucket &&
-                                Math.Abs(f.Exposure - key.Exposure) < 0.5 &&
-                                f.Gain == key.Gain &&
-                                f.ScopeId == key.ScopeId &&
-                                f.SessionTimestamp >= rawCutoff)
-                    .ToList();
-                var candidateFrames = lifecycleEnabled
-                    ? validActiveFrames.Concat(validArchivedFrames)
-                    : validActiveFrames;
+                var candidateFrames = validActiveFrames;
                 var selectedFrames = candidateFrames
                     .OrderByDescending(f => f.SessionTimestamp)
                     .Take(maxFrameCount)
                     .ToList();
                 double lowerBound = key.TempBucket - (bucketStepC / 2.0);
                 double upperBound = key.TempBucket + (bucketStepC / 2.0);
-                int eligibleCount = lifecycleEnabled
-                    ? validActiveFrames.Count + validArchivedFrames.Count
-                    : validActiveFrames.Count;
-                string sourceText = lifecycleEnabled ? "active+archive" : "active";
+                int eligibleCount = validActiveFrames.Count;
+                string sourceText = "active";
                 bool hasFreshMaster = matchingMaster != null && matchingMaster.DateCreated >= masterCutoff;
                 bool hasKnownContributorCount = matchingMaster?.StackCount is > 0;
                 bool shouldRebuildForMoreRaws = hasFreshMaster && hasKnownContributorCount && eligibleCount > matchingMaster!.StackCount!.Value;
@@ -262,11 +229,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     Log($"💾 Written NINALIVE: {Path.GetFileName(ninalivePath)}");
                 }
 
-                if (lifecycleEnabled) {
-                    foreach (var used in selectedFrames.Where(f => IsUnderDirectory(f.Path, rawFolder) && !IsUnderDirectory(f.Path, archiveFolder))) {
-                        MoveToArchive(used.Path, rawFolder, archiveFolder);
-                    }
-                }
                 string newestUsedDate = selectedFrames.Max(f => f.SessionTimestamp).ToString("yyyy-MM-dd");
                 string reasonText = matchingMaster == null
                     ? "missing"
@@ -276,24 +238,28 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 Log($"✅ Master Dark {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} was {reasonText}. Successfully rebuilt using cached raw frames from {newestUsedDate}.");
             }
 
-            if (deleteArchivedEnabled) {
-                PurgeArchivedRawsOlderThan(archiveFolder, rawCutoff);
+            if (deleteRawsEnabled) {
+                PurgeRawDarksOlderThan(rawFolder, masterFolder, rawCutoff);
             }
 
             Log("✅ Stack Master Darks complete");
         }
 
-        private void PurgeArchivedRawsOlderThan(string archiveFolder, DateTime cutoff) {
-            foreach (var path in Directory.GetFiles(archiveFolder, "*.fit*", SearchOption.AllDirectories)) {
+        private void PurgeRawDarksOlderThan(string rawFolder, string masterFolder, DateTime cutoff) {
+            foreach (var path in Directory.GetFiles(rawFolder, "*.fit*", SearchOption.AllDirectories)) {
+                if (IsUnderDirectory(path, masterFolder))
+                    continue;
                 try {
                     var info = ReadFrameInfo(path);
                     if (info == null) continue;
+                    if (!string.Equals(info.Filter, "DARK", StringComparison.OrdinalIgnoreCase))
+                        continue;
                     if (info.SessionTimestamp < cutoff) {
                         File.Delete(path);
-                        Log($"🗑️ Deleted archived raw older than age window: {Path.GetFileName(path)}");
+                        Log($"🗑️ Deleted raw dark older than age window: {Path.GetFileName(path)}");
                     }
                 } catch (Exception ex) {
-                    Log($"⚠️ Failed deleting archived raw {Path.GetFileName(path)}: {ex.Message}");
+                    Log($"⚠️ Failed deleting raw dark {Path.GetFileName(path)}: {ex.Message}");
                 }
             }
         }
@@ -304,22 +270,6 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             if (!fullDir.EndsWith(Path.DirectorySeparatorChar.ToString()))
                 fullDir += Path.DirectorySeparatorChar;
             return fullFile.StartsWith(fullDir, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private void MoveToArchive(string filePath, string rawRoot, string archiveRoot) {
-            try {
-                var relative = Path.GetRelativePath(rawRoot, filePath);
-                var targetPath = Path.Combine(archiveRoot, relative);
-                var targetDir = Path.GetDirectoryName(targetPath);
-                if (!string.IsNullOrEmpty(targetDir))
-                    Directory.CreateDirectory(targetDir);
-                if (File.Exists(targetPath))
-                    targetPath = Path.Combine(targetDir ?? archiveRoot, $"{Path.GetFileNameWithoutExtension(targetPath)}_{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(targetPath)}");
-                File.Move(filePath, targetPath);
-                Log($"📦 Archived raw frame: {Path.GetFileName(filePath)}");
-            } catch (Exception ex) {
-                Log($"⚠️ Failed to archive raw frame {Path.GetFileName(filePath)}: {ex.Message}");
-            }
         }
 
         private MasterInfo? FindNewestMaster(string masterFolder, int bucket, double exposure, int gain, string scopeId) {

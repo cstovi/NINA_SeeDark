@@ -145,15 +145,11 @@ Below are the main settings and what changing them usually means.
 - Lower values: tighter containment to starting conditions.
 - Higher values: more willingness to follow warming trend.
 
-### EnableLifecycleManagement
+### DeleteRawsAfterMaxAge
 
-- What it does: enables archive/recovery behavior for used raws.
-- Implication: contributing raws may be moved to `_archived` after stacking.
-
-### DeleteArchivedRawsAfterMaxAge
-
-- What it does: prunes archived raws older than age policy.
-- Implication: saves storage, but reduces long-term recovery depth.
+- What it does: deletes DARK raws older than age policy from the active NINA save location.
+- Default: off.
+- Implication: saves storage, but is irreversible for removed raws.
 
 ### WriteNinaLiveMasters
 

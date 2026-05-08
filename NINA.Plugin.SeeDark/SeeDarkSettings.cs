@@ -15,8 +15,11 @@ namespace NINA.Plugin.SeeDark {
         public string MasterLibraryFolder { get; set; } = "";
         public int MinFrameCount { get; set; } = 20;
         public int MaxFrameCount { get; set; } = 50;
-        public bool EnableLifecycleManagement { get; set; } = false;
-        public bool DeleteArchivedRawsAfterMaxAge { get; set; } = false;
+        public bool DeleteRawsAfterMaxAge { get; set; } = false;
+        [JsonProperty("DeleteArchivedRawsAfterMaxAge")]
+        private bool LegacyDeleteArchivedRawsAfterMaxAge {
+            set => DeleteRawsAfterMaxAge = value;
+        }
         /// <summary>When true, the stacker also writes a NINA-format master (BITPIX=16, BZERO=32768) alongside the always-present SIRIL/PixInsight float32 master.</summary>
         public bool WriteNinaLiveMasters { get; set; } = false;
         public string DiscordWebhookUrl { get; set; } = "";

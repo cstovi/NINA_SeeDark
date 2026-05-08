@@ -58,8 +58,7 @@ namespace NINA.Plugin.SeeDark {
             MinFrameCount         = Settings.MinFrameCount;
             MaxFrameCount         = Settings.MaxFrameCount;
             DefaultExecutionMode  = NormalizeExecutionMode((DarkExecutionMode)Settings.DefaultExecutionMode);
-            EnableLifecycleManagement = Settings.EnableLifecycleManagement;
-            DeleteArchivedRawsAfterMaxAge = Settings.DeleteArchivedRawsAfterMaxAge;
+            DeleteRawsAfterMaxAge = Settings.DeleteRawsAfterMaxAge;
             WriteNinaLiveMasters  = Settings.WriteNinaLiveMasters;
             DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
             DiscordScopeName      = Settings.DiscordScopeName;
@@ -101,11 +100,6 @@ namespace NINA.Plugin.SeeDark {
                     _maxFrameCount = normalizedMax;
                     RaisePropertyChanged(nameof(MaxFrameCount));
                 }
-                if (!_enableLifecycleManagement && _deleteArchivedRawsAfterMaxAge) {
-                    _deleteArchivedRawsAfterMaxAge = false;
-                    RaisePropertyChanged(nameof(DeleteArchivedRawsAfterMaxAge));
-                }
-
                 Settings.TargetExposure      = _targetExposure;
                 Settings.MaxAgeDays          = _maxAgeDays;
                 Settings.Gain                = _gain;
@@ -113,8 +107,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.MinFrameCount       = _minFrameCount;
                 Settings.MaxFrameCount       = _maxFrameCount;
                 Settings.DefaultExecutionMode = (int)_defaultExecutionMode;
-                Settings.EnableLifecycleManagement = _enableLifecycleManagement;
-                Settings.DeleteArchivedRawsAfterMaxAge = _deleteArchivedRawsAfterMaxAge;
+                Settings.DeleteRawsAfterMaxAge = _deleteRawsAfterMaxAge;
                 Settings.WriteNinaLiveMasters = _writeNinaLiveMasters;
                 Settings.DiscordWebhookUrl   = _discordWebhookUrl;
                 Settings.DiscordScopeName    = _discordScopeName;
@@ -169,8 +162,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.MinFrameCount = latest.MinFrameCount;
                 Settings.MaxFrameCount = latest.MaxFrameCount;
                 Settings.DefaultExecutionMode = latest.DefaultExecutionMode;
-                Settings.EnableLifecycleManagement = latest.EnableLifecycleManagement;
-                Settings.DeleteArchivedRawsAfterMaxAge = latest.DeleteArchivedRawsAfterMaxAge;
+                Settings.DeleteRawsAfterMaxAge = latest.DeleteRawsAfterMaxAge;
                 Settings.WriteNinaLiveMasters = latest.WriteNinaLiveMasters;
                 Settings.DiscordWebhookUrl = latest.DiscordWebhookUrl;
                 Settings.DiscordScopeName = latest.DiscordScopeName;
@@ -187,8 +179,7 @@ namespace NINA.Plugin.SeeDark {
                 _minFrameCount = latest.MinFrameCount;
                 _maxFrameCount = latest.MaxFrameCount;
                 _defaultExecutionMode = NormalizeExecutionMode((DarkExecutionMode)latest.DefaultExecutionMode);
-                _enableLifecycleManagement = latest.EnableLifecycleManagement;
-                _deleteArchivedRawsAfterMaxAge = latest.DeleteArchivedRawsAfterMaxAge;
+                _deleteRawsAfterMaxAge = latest.DeleteRawsAfterMaxAge;
                 _writeNinaLiveMasters = latest.WriteNinaLiveMasters;
                 _discordWebhookUrl = latest.DiscordWebhookUrl;
                 _discordScopeName = latest.DiscordScopeName;
@@ -299,16 +290,10 @@ namespace NINA.Plugin.SeeDark {
             set { _defaultExecutionMode = NormalizeExecutionMode(value); RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
-        private bool _enableLifecycleManagement = false;
-        public bool EnableLifecycleManagement {
-            get => _enableLifecycleManagement;
-            set { _enableLifecycleManagement = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
-        }
-
-        private bool _deleteArchivedRawsAfterMaxAge = false;
-        public bool DeleteArchivedRawsAfterMaxAge {
-            get => _deleteArchivedRawsAfterMaxAge;
-            set { _deleteArchivedRawsAfterMaxAge = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
+        private bool _deleteRawsAfterMaxAge = false;
+        public bool DeleteRawsAfterMaxAge {
+            get => _deleteRawsAfterMaxAge;
+            set { _deleteRawsAfterMaxAge = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private bool _writeNinaLiveMasters = false;

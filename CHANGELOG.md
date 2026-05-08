@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.12.0 - 2026-05-08
+
+- Removed raw dark archiving behavior and lifecycle archive toggle.
+- Replaced archive cleanup with a single optional in-place raw cleanup setting: `DeleteRawsAfterMaxAge`.
+- Stacker now always uses active raws only; when cleanup is enabled it deletes DARK raws older than `MaxAgeDays` from the active NINA save location.
+- Updated plugin settings/UI and docs to reflect the simplified raw retention model.
+
 ## v1.11.0 - 2026-05-08
 
 - Updated SeeDark Auto capture flow so newly captured DARK raws are relocated into the configured `Raw darks folder`.

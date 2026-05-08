@@ -100,13 +100,9 @@ Operational guidance:
 
 Lifecycle controls are opt-in:
 
-- `Enable lifecycle management`
-  - archives contributing raws under `_archived`,
-  - enables archive-based recovery rebuilds.
-- `Delete archived raws after max age`
-  - removes archived raws older than `MaxAgeDays`.
-
-If lifecycle management is disabled, raw files remain non-destructive and `_archived` is not created.
+- `Delete old raw darks`
+  - deletes DARK raws older than `MaxAgeDays` in the active NINA save location.
+  - disabled by default; irreversible when enabled.
 
 ## Current Settings Snapshot
 
@@ -117,7 +113,7 @@ Common user-facing options include:
 - target exposure, gain, max age,
 - master library folder (runtime),
 - temp bucket size (`2C` or `3C`),
-- lifecycle/archive options,
+- optional old-raw cleanup option,
 - optional Discord webhook + verbose per-frame posting.
 
 Advanced/internal controls (not shown in normal UI) include:

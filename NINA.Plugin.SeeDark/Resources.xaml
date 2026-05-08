@@ -117,15 +117,10 @@
                            Text="SeeDark Dark Manager aims for 30 accepted frames at your default exposure (≤30 capture attempts per temperature segment). Allowing warmer continuation adds roughly another segment per band — often about twice as long when moving one band warmer."
                            Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="Manage lifecycle:" VerticalAlignment="Center" Margin="0,4,8,0"
-                           ToolTip="Archive used raws after stacking and allow archive-based recovery rebuilds."/>
-                <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding EnableLifecycleManagement, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"
-                          ToolTip="Archive used raws after stacking and allow archive-based recovery rebuilds."/>
-
-                <TextBlock Grid.Row="7" Grid.Column="0" Text="Delete archive raws:" VerticalAlignment="Center" Margin="0,4,8,0"
-                           ToolTip="Delete archived raws older than Max master age. Advanced — irreversible."/>
-                <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding DeleteArchivedRawsAfterMaxAge, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding EnableLifecycleManagement}" VerticalAlignment="Center" Margin="0,4,0,0"
-                          ToolTip="Delete archived raws older than Max master age. Advanced — irreversible."/>
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="Delete old raw darks:" VerticalAlignment="Center" Margin="0,4,8,0"
+                           ToolTip="Delete DARK raws older than Max master age from the NINA save location. Advanced — irreversible."/>
+                <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding DeleteRawsAfterMaxAge, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,0"
+                          ToolTip="Delete DARK raws older than Max master age from the NINA save location. Advanced — irreversible."/>
 
             </Grid>
 

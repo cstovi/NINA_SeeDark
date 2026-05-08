@@ -40,7 +40,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - stack/match tolerance is internally derived from bucket size and hidden in UI
   - pre-range lead is fixed internally to `2°C` and hidden in UI
   - stack frame counts are fixed internally to min `20` and max `50` (most recent frames), hidden in UI
-  - lifecycle management is opt-in for archive/recovery behavior; archive deletion is a separate opt-in
+  - optional in-place raw cleanup (`DeleteRawsAfterMaxAge`) is separate and off by default
 - Container UI: exposure and gain only (no execution-mode picker, no hint text); `Auto` is the default for new containers. Legacy sequences deserialized with `Manual` still work and show child UI when applicable.
 - Plugin options auto-save on edit (no manual Save button)
 - Notifications at the bottom: `Discord webhook URL`, optional **Verbose** per-frame auto dark lines (chatty; dedicated webhook/channel recommended)
@@ -68,8 +68,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 5. Rebuilds a master when missing or expired (`MaxAgeDays`); additionally, for fresh masters with readable `STACKCNT`, rebuilds when current eligible raw count exceeds that `STACKCNT` (legacy masters without `STACKCNT` remain skip-safe)
 6. Per-pixel median stack → SIRIL master (BITPIX=-32, float32) + NINALIVE master (BITPIX=16, BZERO=32768)
 7. Deletes superseded masters for the same group key before writing
-8. If lifecycle management is enabled, archives contributing active raw frames under the NINA darks location `_archived` folder and uses archive for recovery
-9. If archive deletion is enabled, archived raws older than `MaxAgeDays` are removed
+8. If raw cleanup is enabled, DARK raws older than `MaxAgeDays` are deleted in place from the NINA save root
 10. Master discovery remains header-driven by scanning `MasterLibraryFolder` FITS files (no CSV index dependency)
 11. New masters include `STACKCNT` in FITS headers so future runs can detect whether more valid raws are now available for a quality-improving rebuild
 
@@ -90,8 +89,7 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `MinFrameCount` | int | 20 | Internal fixed minimum frames required to stack a group (hidden in UI) |
 | `MaxFrameCount` | int | 50 | Internal fixed maximum frames stacked per group (most recent frames, hidden in UI) |
 | `DefaultExecutionMode` | int | 1 | Default for new containers (`1=Auto`, `0=Manual`); no UI — reserved for future advanced mode |
-| `EnableLifecycleManagement` | bool | false | Opt-in: archive used raws and allow archive-based recovery rebuilds |
-| `DeleteArchivedRawsAfterMaxAge` | bool | false | Opt-in: delete archived raws older than `MaxAgeDays` |
+| `DeleteRawsAfterMaxAge` | bool | false | Opt-in: delete DARK raws older than `MaxAgeDays` from the active NINA save location |
 | `WriteNinaLiveMasters` | bool | false | Opt-in: also write a NINA-format master (BITPIX=16, BZERO=32768) alongside the always-present SIRIL/PixInsight float32 master |
 | `AutoDarkMaxWarmerBucketSteps` | int | 0 | Auto capture may follow rising temp into up to N warmer bands (vs. run-start anchor) when no master exists there; 0 = stay in starting band only |
 | `TempBucketSize` | int | 2 | User-selectable: 2 or 3 in simple mode |
