@@ -341,7 +341,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 }
                 needsDarks = !currentSatisfied;
                 if (needsDarks) {
-                    Log("🌑 No matching dark found — darks needed!");
+                    Log("🌑 No matching master dark found — darks needed!");
                 } else if (!lackCurrent) {
                     var matchedMaster = masters
                         .Where(r =>
@@ -379,16 +379,16 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 LacksAcceptableMaster(nextWarmerBucket, masters, cutoff, scopeId);
 
             if (!inWindow && !autoBypassHighInBand) {
-                Log($"⏳ Missing dark for {bucket}°C bucket, but sensor {temp:F1}°C outside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C (need temp < {bucket - startBelowNominalC:F1}°C) — skipping this run");
+                Log($"⏳ Missing master dark for {bucket}°C bucket, but sensor {temp:F1}°C outside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C (need temp < {bucket - startBelowNominalC:F1}°C) — skipping this run");
                 return false;
             }
 
             if (autoBypassHighInBand) {
-                Log($"🌑 Missing dark for {bucket}°C bucket; sensor {temp:F1}°C is high in-band but bucket {nextWarmerBucket}°C also has no master — starting Auto capture (may retarget upward).");
+                Log($"🌑 Missing master dark for {bucket}°C bucket; sensor {temp:F1}°C is high in-band but bucket {nextWarmerBucket}°C also has no master — starting Auto capture (may retarget upward).");
                 return true;
             }
 
-            Log($"🌑 Missing dark for {bucket}°C bucket and sensor {temp:F1}°C is inside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C — darks needed!");
+            Log($"🌑 Missing master dark for {bucket}°C bucket and sensor {temp:F1}°C is inside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C — darks needed!");
             return true;
         }
 
