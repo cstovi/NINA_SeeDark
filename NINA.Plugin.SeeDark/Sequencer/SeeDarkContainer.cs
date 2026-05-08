@@ -401,7 +401,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             string scopeId,
             int bucketStepC,
             DateTime sessionDate) {
-            var rawFolder = _plugin.GetConfiguredRawDarksFolder();
+            var rawFolder = _plugin.GetNinaDarkRawRootFolder();
             if (string.IsNullOrWhiteSpace(rawFolder) || !Directory.Exists(rawFolder))
                 return 0;
 
@@ -537,30 +537,34 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         private async Task SaveRawDarkAsync(IExposureData? exposureData, CancellationToken token) {
             if (exposureData == null) return;
             try {
-                var rawDarksFolder = _plugin.GetConfiguredRawDarksFolder();
+                var rawDarksFolder = _plugin.GetNinaDarkRawRootFolder();
                 if (string.IsNullOrWhiteSpace(rawDarksFolder)) {
-                    throw new InvalidOperationException("Raw darks folder is not configured.");
+                    throw new InvalidOperationException("NINA image file path is not configured.");
                 }
                 Directory.CreateDirectory(rawDarksFolder);
                 var imageData = await exposureData.ToImageData(null, token);
                 if (imageData == null) {
                     throw new InvalidOperationException("Captured dark frame could not be converted to image data.");
                 }
+                var darkPattern = _plugin.GetNinaDarkFilePattern();
+                if (string.IsNullOrWhiteSpace(darkPattern)) {
+                    throw new InvalidOperationException("NINA DARK file pattern could not be resolved.");
+                }
                 var fileSaveInfo = new FileSaveInfo(_plugin.ProfileService) {
                     FilePath = rawDarksFolder,
-                    FilePattern = "SeeDark_DARK_$$DATEUTC$$_$$TIMEUTC$$_$$EXPOSURETIME$$s_G$$GAIN$$_T$$SENSORTEMP$$_$$FRAMENR$$",
+                    FilePattern = darkPattern,
                     FileType = NINA.Core.Enum.FileTypeEnum.FITS,
-                    ForceExtension = ".fit",
                 };
                 var savedPath = await imageData.SaveToDisk(fileSaveInfo, token, forceFileType: true);
                 if (string.IsNullOrWhiteSpace(savedPath) || !File.Exists(savedPath)) {
                     throw new IOException("Raw dark save returned no valid file path.");
                 }
                 if (!IsUnderDirectory(savedPath, rawDarksFolder)) {
-                    throw new IOException($"Raw dark save path escaped configured RawDarksFolder: {savedPath}");
+                    throw new IOException($"Raw dark save path escaped NINA image file root: {savedPath}");
                 }
+                Log($"💾 Saved DARK via NINA pattern to {savedPath}", discordVerboseOnly: true, fileOnly: true);
             } catch (Exception ex) {
-                Log($"❌ Auto dark capture aborted: failed to save raw dark directly to configured Raw Darks Folder. {ex.Message}");
+                Log($"❌ Auto dark capture aborted: failed to save DARK using NINA image path/pattern rules. {ex.Message}");
                 throw;
             }
         }

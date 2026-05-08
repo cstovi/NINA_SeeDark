@@ -33,7 +33,6 @@ Since SeeDark is not currently in the NINA plugin repository, install it manuall
 ## Quick Start
 
 1. Set plugin option:
-   - `Raw darks folder` (required; SeeDark saves DARK raws here and reads raws from here)
    - `Master library folder` (required for runtime matching/capture decisions)
 2. Add `SeeDark Dark Manager` to your sequence.
 3. Set container exposure and gain to your intended dark profile.
@@ -80,7 +79,7 @@ Same-night raw sufficiency guard:
 
 `SeeDark Stack Master Darks`:
 
-- scans your configured `Raw darks folder` recursively for dark FITS,
+- scans NINA's image save root recursively for dark FITS (using NINA `Image File Path` and DARK pattern rules for where DARKs are written),
 - groups by `(temp bucket, exposure, gain, scope ID)`,
 - uses most recent valid frames within age rules,
 - rebuilds masters when:
@@ -117,7 +116,6 @@ Common user-facing options include:
 
 - target exposure, gain, max age,
 - master library folder (runtime),
-- raw darks folder (runtime, required),
 - temp bucket size (`2C` or `3C`),
 - lifecycle/archive options,
 - optional Discord webhook + verbose per-frame posting.
@@ -132,7 +130,7 @@ Advanced/internal controls (not shown in normal UI) include:
 
 If you want to keep pre-plugin masters untouched, use a dedicated `Master library folder` for SeeDark-managed masters.
 
-The stacker and Auto same-night sufficiency checks read raws from the plugin `Raw darks folder` setting. SeeDark Auto dark capture now writes DARK raws directly into this folder (no relocation scan/fallback). If direct save fails, Auto capture aborts immediately.
+The stacker and Auto same-night sufficiency checks read raws from NINA's image save root. SeeDark Auto dark capture writes DARK raws using NINA's own DARK pattern resolution (`Image File Path` + DARK override pattern if set), including date/type folders. If save fails, Auto capture aborts immediately.
 
 ## Logs
 

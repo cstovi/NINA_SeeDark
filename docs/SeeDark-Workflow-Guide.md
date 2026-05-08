@@ -125,12 +125,13 @@ Below are the main settings and what changing them usually means.
 - What it does: where SeeDark writes and scans master FITS.
 - Implication: this folder is the runtime source of truth for master availability checks.
 
-### Raw Darks Folder
+### NINA DARK Save Path Rules
 
-- What it does: points SeeDark to the raw DARK FITS source used by stacking and same-night sufficiency checks.
-- Required: yes. If unset or invalid, stacker run aborts with a clear configuration error.
-- Implication: SeeDark writes Auto-captured DARK raws directly to this folder and also reads from it for stack/sufficiency checks. No relocation scan/fallback is used. It can be independent from NINA's general image save path.
-- Failure behavior: if an Auto-captured raw cannot be saved to this folder, Auto dark capture aborts immediately (hard-fail).
+- What it does: SeeDark follows NINA's own save rules for DARK raws.
+- Source of truth: NINA `Image File Path` plus DARK-specific file pattern override (when set), otherwise default file pattern.
+- Implication: Auto-captured DARK raws are saved with NINA token-expanded folders/filenames (including date/type folder layouts).
+- Read side: stacker and same-night sufficiency checks scan from NINA image save root and identify DARK raws via FITS headers.
+- Failure behavior: if an Auto-captured raw cannot be saved via NINA path/pattern rules, Auto dark capture aborts immediately (hard-fail).
 
 ### Temp Bucket Size (2C or 3C)
 

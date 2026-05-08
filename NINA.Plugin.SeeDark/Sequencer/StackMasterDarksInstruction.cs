@@ -50,15 +50,16 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         public override object Clone() => new StackMasterDarksInstruction(this);
 
         private void RunStack(CancellationToken token) {
-            var rawFolder    = _plugin.GetConfiguredRawDarksFolder();
+            var rawFolder    = _plugin.GetNinaDarkRawRootFolder();
             var masterFolder = _plugin.Settings.MasterLibraryFolder;
+            var darkPattern = _plugin.GetNinaDarkFilePattern();
 
             if (string.IsNullOrWhiteSpace(rawFolder)) {
-                Log("❌ Raw darks folder is not configured. Set it in SeeDark plugin options — aborting");
+                Log("❌ NINA image file path is not configured — aborting");
                 return;
             }
             if (!Directory.Exists(rawFolder)) {
-                Log($"❌ Raw darks folder does not exist: {rawFolder} — aborting");
+                Log($"❌ NINA image file path does not exist: {rawFolder} — aborting");
                 return;
             }
             if (string.IsNullOrWhiteSpace(masterFolder)) {
@@ -71,6 +72,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             bool deleteArchivedEnabled = lifecycleEnabled && _plugin.Settings.DeleteArchivedRawsAfterMaxAge;
 
             Log($"🔭 Scanning {rawFolder}");
+            if (!string.IsNullOrWhiteSpace(darkPattern))
+                Log($"🔭 NINA DARK pattern: {darkPattern}");
             Log($"🔭 Masters → {masterFolder}");
             Log($"🔭 Lifecycle management: {(lifecycleEnabled ? "enabled" : "disabled")}");
             Log($"🔭 Archive cleanup: {(deleteArchivedEnabled ? "enabled" : "disabled")}");

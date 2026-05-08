@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - `start = (bucket - halfStep) - PreBucketLeadC`
    - `end = bucket + halfStep` (exclusive)
 7. `ExecutionMode=Manual`: executes children only if no matching master exists and sensor temp is inside start window
-8. `ExecutionMode=Auto`: runs internal dark capture loop (DARK filter/type, gain/exposure from container, offset default, target 30 accepted frames per **segment** (fixed), **30 capture attempts per segment** (resets on retarget), min 20 to stack, drift guard). Starting bucket is fixed at run start (`anchorBucket`); retarget to a **warmer** bucket with no acceptable master is allowed only within `AutoDarkMaxWarmerBucketSteps` (0–3) discrete bands above that anchor; **cooler** missing-master retargets always allowed. Each allowed retarget resets segment attempt count. Auto-captured DARK raws are written directly to configured `RawDarksFolder` via `IImageData.SaveToDisk` (forced FITS); on save failure Auto aborts immediately (hard-fail).
+8. `ExecutionMode=Auto`: runs internal dark capture loop (DARK filter/type, gain/exposure from container, offset default, target 30 accepted frames per **segment** (fixed), **30 capture attempts per segment** (resets on retarget), min 20 to stack, drift guard). Starting bucket is fixed at run start (`anchorBucket`); retarget to a **warmer** bucket with no acceptable master is allowed only within `AutoDarkMaxWarmerBucketSteps` (0–3) discrete bands above that anchor; **cooler** missing-master retargets always allowed. Each allowed retarget resets segment attempt count. Auto-captured DARK raws are written via NINA `Image File Path` + DARK pattern resolution (`GetFilePattern("DARK")` + `SaveToDisk` token expansion); on save failure Auto aborts immediately (hard-fail).
 9. **Auto raw sufficiency guard:** same-night raw counts are evaluated per key `(bucket, exposure, gain, scopeId)` using session-date rebasing (`hour < 12` => previous day). If a bucket already has enough same-night raws (`MaxFrameCount`, currently 50), additional capture for that bucket is skipped. To preserve uncooled thermal progression into a needed warmer bucket, bounded overshoot in the current bucket is allowed up to 60 raws.
 10. **Auto only — proactive next bucket:** If the **current** bucket is already satisfied (acceptable master, or enough same-night raws) but the **next warmer** bucket still needs collection, start Auto capture immediately (no start-window wait), target the next warmer bucket, and take **warmup** exposures while still colder (not counted toward target / no drift stop) until the sensor reaches the target band.
 
@@ -61,7 +61,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Dark Stacker (`StackMasterDarksInstruction.cs`)
 
-1. Scans configured `RawDarksFolder` recursively for `*.fit*` with `FILTER=DARK`
+1. Scans NINA image save root (`ImageFileSettings.FilePath`) recursively for `*.fit*` with `FILTER=DARK`
 2. Header fallbacks: `DATE-LOC`→`DATE-OBS`, `EXPTIME`→`EXPOSURE`, `CCD-TEMP`→`SET-TEMP`
 3. Session date rebasing: if `hour < 12`, subtract one day (sessions span midnight)
 4. Groups by `(tempBucket, exposure, gain, scopeId)` and uses the most recent valid frames (strict age window by FITS date)
@@ -87,7 +87,6 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `MaxAgeDays` | int | 180 | Max age of an acceptable dark |
 | `Gain` | int | 200 | Camera gain to match (Seestar S30 default) |
 | `MasterLibraryFolder` | string | _(empty)_ | Folder where stacker writes master FITS files |
-| `RawDarksFolder` | string | _(empty)_ | Required folder where SeeDark writes Auto-captured DARK raws and reads raws for stacking and same-night sufficiency checks |
 | `MinFrameCount` | int | 20 | Internal fixed minimum frames required to stack a group (hidden in UI) |
 | `MaxFrameCount` | int | 50 | Internal fixed maximum frames stacked per group (most recent frames, hidden in UI) |
 | `DefaultExecutionMode` | int | 1 | Default for new containers (`1=Auto`, `0=Manual`); no UI — reserved for future advanced mode |

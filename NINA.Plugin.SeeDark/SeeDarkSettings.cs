@@ -13,7 +13,6 @@ namespace NINA.Plugin.SeeDark {
         public int MaxAgeDays { get; set; } = 180;
         public int Gain { get; set; } = 200;
         public string MasterLibraryFolder { get; set; } = "";
-        public string RawDarksFolder { get; set; } = "";
         public int MinFrameCount { get; set; } = 20;
         public int MaxFrameCount { get; set; } = 50;
         public bool EnableLifecycleManagement { get; set; } = false;
