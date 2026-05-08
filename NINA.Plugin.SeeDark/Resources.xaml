@@ -18,10 +18,10 @@
                 <StackPanel Margin="0,6,0,6">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Exposure (s):" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                        <TextBox Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged, FallbackValue=20, TargetNullValue=20}"
+                        <TextBox Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=LostFocus, FallbackValue=20, TargetNullValue=20}"
                                  Width="50" VerticalAlignment="Center" Margin="0,0,12,0"/>
                         <TextBlock Text="Gain:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                        <TextBox Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged, FallbackValue=200, TargetNullValue=200}"
+                        <TextBox Text="{Binding Gain, UpdateSourceTrigger=LostFocus, FallbackValue=200, TargetNullValue=200}"
                                  Width="50" VerticalAlignment="Center" Margin="0,0,12,0"/>
                     </StackPanel>
                 </StackPanel>
@@ -85,12 +85,12 @@
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Default exposure (s):" VerticalAlignment="Center" Margin="0,0,8,4"
                            ToolTip="Overridable per container."/>
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center" Margin="0,0,0,4"
                          ToolTip="Overridable per container."/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Default gain:" VerticalAlignment="Center" Margin="0,0,8,4"
                            ToolTip="e.g. S30 = 200. Overridable per container."/>
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Gain, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center" Margin="0,0,0,4"
                          ToolTip="e.g. S30 = 200. Overridable per container."/>
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Temp bucket size (°C):" VerticalAlignment="Center" Margin="0,0,8,4"
