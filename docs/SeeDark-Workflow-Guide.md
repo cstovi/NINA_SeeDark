@@ -129,7 +129,7 @@ Below are the main settings and what changing them usually means.
 
 - What it does: points SeeDark to the raw DARK FITS source used by stacking and same-night sufficiency checks.
 - Required: yes. If unset or invalid, stacker run aborts with a clear configuration error.
-- Implication: set this to the exact folder where your NINA DARK captures are being written for your current profile/pattern setup.
+- Implication: SeeDark writes Auto-captured DARK raws to this folder and also reads from it for stack/sufficiency checks. It can be independent from NINA's general image save path.
 
 ### Temp Bucket Size (2C or 3C)
 

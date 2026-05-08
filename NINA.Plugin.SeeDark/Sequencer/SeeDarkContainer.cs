@@ -536,16 +536,72 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         private async Task SaveRawDarkAsync(IExposureData? exposureData, CancellationToken token) {
             if (exposureData == null) return;
             try {
+                var rawDarksFolder = _plugin.GetConfiguredRawDarksFolder();
+                if (string.IsNullOrWhiteSpace(rawDarksFolder)) {
+                    Log("⚠️ Raw darks folder is not configured. Set it in SeeDark plugin options to save captures.");
+                    return;
+                }
+                Directory.CreateDirectory(rawDarksFolder);
+                var saveStartUtc = DateTime.UtcNow.AddSeconds(-2);
                 var imageData = await exposureData.ToImageData(null, token);
                 if (imageData == null) return;
-                // Route through NINA's save pipeline so DARK naming/path comes from NINA File settings.
+                // Route through NINA's save pipeline for file creation, then relocate into configured RawDarksFolder.
                 var prepareTask = _plugin.ImagingMediator.PrepareImage(
                     imageData,
                     new NINA.Core.Utility.PrepareImageParameters(null, false),
                     token);
                 await _plugin.ImageSaveMediator.Enqueue(imageData, prepareTask, null, token);
+
+                var savedPath = ResolveSavedImagePath(imageData);
+                if (string.IsNullOrWhiteSpace(savedPath) || !File.Exists(savedPath)) {
+                    savedPath = FindLatestSavedDarkPath(saveStartUtc);
+                }
+                if (string.IsNullOrWhiteSpace(savedPath) || !File.Exists(savedPath)) {
+                    Log("⚠️ Saved dark frame path could not be resolved for relocation.");
+                    return;
+                }
+                if (IsUnderDirectory(savedPath, rawDarksFolder)) {
+                    return;
+                }
+
+                var fileName = Path.GetFileName(savedPath);
+                var destinationPath = Path.Combine(rawDarksFolder, fileName);
+                if (File.Exists(destinationPath)) {
+                    destinationPath = Path.Combine(
+                        rawDarksFolder,
+                        $"{Path.GetFileNameWithoutExtension(fileName)}_{DateTime.Now:yyyyMMddHHmmssfff}{Path.GetExtension(fileName)}");
+                }
+                File.Move(savedPath, destinationPath);
             } catch (Exception ex) {
                 Log($"⚠️ Failed to save raw dark frame: {ex.Message}");
+            }
+        }
+
+        private string? ResolveSavedImagePath(object imageData) {
+            try {
+                var type = imageData.GetType();
+                foreach (var propName in new[] { "FilePath", "Path", "FileName", "Filename" }) {
+                    var prop = type.GetProperty(propName);
+                    if (prop == null) continue;
+                    if (prop.GetValue(imageData) is string path && !string.IsNullOrWhiteSpace(path))
+                        return path;
+                }
+            } catch { }
+            return null;
+        }
+
+        private string? FindLatestSavedDarkPath(DateTime saveStartUtc) {
+            try {
+                var basePath = _plugin.ProfileService.ActiveProfile?.ImageFileSettings?.FilePath;
+                if (string.IsNullOrWhiteSpace(basePath) || !Directory.Exists(basePath))
+                    return null;
+
+                return Directory.GetFiles(basePath, "*.fit*", SearchOption.AllDirectories)
+                    .Where(path => File.GetLastWriteTimeUtc(path) >= saveStartUtc)
+                    .OrderByDescending(File.GetLastWriteTimeUtc)
+                    .FirstOrDefault();
+            } catch {
+                return null;
             }
         }
 

@@ -87,7 +87,7 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `MaxAgeDays` | int | 180 | Max age of an acceptable dark |
 | `Gain` | int | 200 | Camera gain to match (Seestar S30 default) |
 | `MasterLibraryFolder` | string | _(empty)_ | Folder where stacker writes master FITS files |
-| `RawDarksFolder` | string | _(empty)_ | Required folder where SeeDark reads raw DARK FITS for stacking and same-night sufficiency checks |
+| `RawDarksFolder` | string | _(empty)_ | Required folder where SeeDark writes Auto-captured DARK raws and reads raws for stacking and same-night sufficiency checks |
 | `MinFrameCount` | int | 20 | Internal fixed minimum frames required to stack a group (hidden in UI) |
 | `MaxFrameCount` | int | 50 | Internal fixed maximum frames stacked per group (most recent frames, hidden in UI) |
 | `DefaultExecutionMode` | int | 1 | Default for new containers (`1=Auto`, `0=Manual`); no UI — reserved for future advanced mode |
