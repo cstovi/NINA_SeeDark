@@ -592,14 +592,17 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         }
 
         private void Log(string message, bool discordVerboseOnly = false, bool fileOnly = false) {
+            var timestampedMessage = _plugin.DiscordVerbosePerFrame
+                ? $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {message}"
+                : message;
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
-                File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");
+                File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {timestampedMessage}{Environment.NewLine}");
             } catch { }
             if (fileOnly) return;
             var mirrorDiscord = discordVerboseOnly ? _plugin.DiscordVerbosePerFrame : true;
             if (mirrorDiscord)
-                _ = _plugin.SendDiscordAsync(message);
+                _ = _plugin.SendDiscordAsync(timestampedMessage);
         }
 
         public override object Clone() {

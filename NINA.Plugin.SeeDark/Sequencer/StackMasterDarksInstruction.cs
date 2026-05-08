@@ -546,12 +546,15 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         };
 
         private void Log(string msg) {
+            var timestampedMessage = _plugin.DiscordVerbosePerFrame
+                ? $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {msg}"
+                : msg;
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
-                File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}{Environment.NewLine}");
+                File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {timestampedMessage}{Environment.NewLine}");
             } catch { }
             if (ShouldSendToDiscord(msg))
-                _ = _plugin.SendDiscordAsync(msg);
+                _ = _plugin.SendDiscordAsync(timestampedMessage);
         }
 
         private static bool ShouldSendToDiscord(string msg) {
