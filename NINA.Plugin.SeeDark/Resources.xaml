@@ -62,9 +62,6 @@
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding RawDarksFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"
                          ToolTip="Raw darks folder is required. SeeDark writes DARK captures here and reads raws from here."/>
                 <Button Grid.Row="1" Grid.Column="2" Content="..." Width="28" Margin="8,0,0,4" VerticalAlignment="Center" Click="BrowseRawDarksFolder_Click"/>
-                <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
-                           Text="Raw darks folder is required. SeeDark writes DARK captures here and reads raws from here."
-                           Foreground="#888" FontSize="11" Margin="0,0,0,4"/>
             </Grid>
 
             <TextBlock Text="Dark Matching" FontWeight="Bold" Margin="0,16,0,6"/>
