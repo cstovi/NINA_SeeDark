@@ -132,7 +132,7 @@ Advanced/internal controls (not shown in normal UI) include:
 
 If you want to keep pre-plugin masters untouched, use a dedicated `Master library folder` for SeeDark-managed masters.
 
-The stacker and Auto same-night sufficiency checks read raws from the plugin `Raw darks folder` setting. SeeDark Auto dark capture also relocates captured DARK raws into this folder.
+The stacker and Auto same-night sufficiency checks read raws from the plugin `Raw darks folder` setting. SeeDark Auto dark capture now writes DARK raws directly into this folder (no relocation scan/fallback). If direct save fails, Auto capture aborts immediately.
 
 ## Logs
 

@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -11,6 +10,7 @@ using Newtonsoft.Json;
 using NINA.Core.Model;
 using NINA.Core.Model.Equipment;
 using NINA.Equipment.Model;
+using NINA.Image.FileFormat;
 using NINA.Image.Interfaces;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Container.ExecutionStrategy;
@@ -539,107 +539,30 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             try {
                 var rawDarksFolder = _plugin.GetConfiguredRawDarksFolder();
                 if (string.IsNullOrWhiteSpace(rawDarksFolder)) {
-                    Log("⚠️ Raw darks folder is not configured. Set it in SeeDark plugin options to save captures.");
-                    return;
+                    throw new InvalidOperationException("Raw darks folder is not configured.");
                 }
                 Directory.CreateDirectory(rawDarksFolder);
                 var imageData = await exposureData.ToImageData(null, token);
-                if (imageData == null) return;
-                // Route through NINA's save pipeline for file creation, then relocate into configured RawDarksFolder.
-                var prepareTask = _plugin.ImagingMediator.PrepareImage(
-                    imageData,
-                    new NINA.Core.Utility.PrepareImageParameters(null, false),
-                    token);
-                await _plugin.ImageSaveMediator.Enqueue(imageData, prepareTask, null, token);
-
-                var savedPath = ResolveSavedImagePath(imageData);
+                if (imageData == null) {
+                    throw new InvalidOperationException("Captured dark frame could not be converted to image data.");
+                }
+                var fileSaveInfo = new FileSaveInfo(_plugin.ProfileService) {
+                    FilePath = rawDarksFolder,
+                    FilePattern = "SeeDark_DARK_$$DATEUTC$$_$$TIMEUTC$$_$$EXPOSURETIME$$s_G$$GAIN$$_T$$SENSORTEMP$$_$$FRAMENR$$",
+                    FileType = NINA.Core.Enum.FileTypeEnum.FITS,
+                    ForceExtension = ".fit",
+                };
+                var savedPath = await imageData.SaveToDisk(fileSaveInfo, token, forceFileType: true);
                 if (string.IsNullOrWhiteSpace(savedPath) || !File.Exists(savedPath)) {
-                    Log("⚠️ Saved dark frame path could not be resolved from save result; relocation skipped.");
-                    return;
+                    throw new IOException("Raw dark save returned no valid file path.");
                 }
-                if (IsUnderDirectory(savedPath, rawDarksFolder)) {
-                    return;
+                if (!IsUnderDirectory(savedPath, rawDarksFolder)) {
+                    throw new IOException($"Raw dark save path escaped configured RawDarksFolder: {savedPath}");
                 }
-
-                var fileName = Path.GetFileName(savedPath);
-                var destinationPath = Path.Combine(rawDarksFolder, fileName);
-                if (File.Exists(destinationPath)) {
-                    destinationPath = Path.Combine(
-                        rawDarksFolder,
-                        $"{Path.GetFileNameWithoutExtension(fileName)}_{DateTime.Now:yyyyMMddHHmmssfff}{Path.GetExtension(fileName)}");
-                }
-                File.Move(savedPath, destinationPath);
             } catch (Exception ex) {
-                Log($"⚠️ Failed to save raw dark frame: {ex.Message}");
+                Log($"❌ Auto dark capture aborted: failed to save raw dark directly to configured Raw Darks Folder. {ex.Message}");
+                throw;
             }
-        }
-
-        private string? ResolveSavedImagePath(object imageData) {
-            try {
-                var visited = new HashSet<object>(ReferenceEqualityComparer.Instance);
-                return ResolveSavedImagePathRecursive(imageData, 0, visited);
-            } catch { }
-            return null;
-        }
-
-        private string? ResolveSavedImagePathRecursive(object? value, int depth, HashSet<object> visited) {
-            if (value == null || depth > 4) return null;
-            if (!visited.Add(value)) return null;
-
-            if (value is string textPath) {
-                if (LooksLikeFitsPath(textPath) && File.Exists(textPath))
-                    return textPath;
-                return null;
-            }
-
-            if (value is IDictionary dictionary) {
-                foreach (DictionaryEntry entry in dictionary) {
-                    var fromKey = ResolveSavedImagePathRecursive(entry.Key, depth + 1, visited);
-                    if (!string.IsNullOrWhiteSpace(fromKey)) return fromKey;
-                    var fromValue = ResolveSavedImagePathRecursive(entry.Value, depth + 1, visited);
-                    if (!string.IsNullOrWhiteSpace(fromValue)) return fromValue;
-                }
-                return null;
-            }
-
-            if (value is IEnumerable enumerable && value is not string) {
-                foreach (var item in enumerable) {
-                    var fromItem = ResolveSavedImagePathRecursive(item, depth + 1, visited);
-                    if (!string.IsNullOrWhiteSpace(fromItem)) return fromItem;
-                }
-                return null;
-            }
-
-            var type = value.GetType();
-            foreach (var propName in new[] { "FilePath", "Path", "FileName", "Filename", "SavedPath", "OutputPath", "ImagePath" }) {
-                var prop = type.GetProperty(propName);
-                if (prop == null) continue;
-                object? propValue = null;
-                try { propValue = prop.GetValue(value); } catch { }
-                var fromNamed = ResolveSavedImagePathRecursive(propValue, depth + 1, visited);
-                if (!string.IsNullOrWhiteSpace(fromNamed)) return fromNamed;
-            }
-
-            foreach (var prop in type.GetProperties()) {
-                if (prop.GetIndexParameters().Length > 0) continue;
-                if (prop.PropertyType.IsPrimitive || prop.PropertyType.IsEnum) continue;
-
-                object? propValue = null;
-                try { propValue = prop.GetValue(value); } catch { }
-                var fromProp = ResolveSavedImagePathRecursive(propValue, depth + 1, visited);
-                if (!string.IsNullOrWhiteSpace(fromProp)) return fromProp;
-            }
-
-            return null;
-        }
-
-        private static bool LooksLikeFitsPath(string path) {
-            if (string.IsNullOrWhiteSpace(path)) return false;
-            if (!Path.IsPathRooted(path)) return false;
-            var extension = Path.GetExtension(path);
-            return extension.Equals(".fit", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".fits", StringComparison.OrdinalIgnoreCase)
-                || extension.Equals(".fts", StringComparison.OrdinalIgnoreCase);
         }
 
         private void Log(string message, bool discordVerboseOnly = false, bool fileOnly = false) {
