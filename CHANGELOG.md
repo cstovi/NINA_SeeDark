@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.11.0 - 2026-05-08
+
+- Updated SeeDark Auto capture flow so newly captured DARK raws are relocated into the configured `Raw darks folder`.
+- Kept stacker and same-night sufficiency checks reading from that same configured folder for a single explicit source of truth.
+- Updated UI/docs wording to clarify `Raw darks folder` can be independent from NINA's general image save path.
+
 ## v1.10.0 - 2026-05-08
 
 - Added required `Raw darks folder` plugin option so raw DARK source is explicit and user-configured.
