@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.10.0 - 2026-05-08
+
+- Added required `Raw darks folder` plugin option so raw DARK source is explicit and user-configured.
+- Replaced hardcoded `<NINA FilePath>\CALIBRATION\DARKs` assumptions in stacker and same-night raw sufficiency checks.
+- Added clear validation errors when raw darks folder is missing or does not exist.
+- Updated plugin options UI and docs to reflect explicit raw dark source configuration.
+
 ## v1.9.0 - 2026-05-08
 
 - Added same-night raw sufficiency checks in Auto mode so SeeDark can skip additional capture for a bucket when enough raws already exist for tonight, even before master rebuild runs.
