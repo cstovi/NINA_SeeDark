@@ -60,14 +60,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Dark Stacker (`StackMasterDarksInstruction.cs`)
 
-1. Scans `RawDarksFolder` recursively for `*.fit*` with `FILTER=DARK`
+1. Scans NINA's darks location (`<NINA FilePath>\CALIBRATION\DARKs`) recursively for `*.fit*` with `FILTER=DARK`
 2. Header fallbacks: `DATE-LOC`→`DATE-OBS`, `EXPTIME`→`EXPOSURE`, `CCD-TEMP`→`SET-TEMP`
 3. Session date rebasing: if `hour < 12`, subtract one day (sessions span midnight)
 4. Groups by `(tempBucket, exposure, gain, scopeId)` and uses the most recent valid frames (strict age window by FITS date)
 5. Rebuilds a master only when missing or expired (`MaxAgeDays`), otherwise keeps fresh masters unchanged
 6. Per-pixel median stack → SIRIL master (BITPIX=-32, float32) + NINALIVE master (BITPIX=16, BZERO=32768)
 7. Deletes superseded masters for the same group key before writing
-8. If lifecycle management is enabled, archives contributing active raw frames under `RawDarksFolder\_archived` and uses archive for recovery
+8. If lifecycle management is enabled, archives contributing active raw frames under the NINA darks location `_archived` folder and uses archive for recovery
 9. If archive deletion is enabled, archived raws older than `MaxAgeDays` are removed
 10. Master discovery remains header-driven by scanning `MasterLibraryFolder` FITS files (no CSV index dependency)
 
@@ -84,7 +84,6 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `TargetExposure` | double | 20s | Exposure time to match against |
 | `MaxAgeDays` | int | 180 | Max age of an acceptable dark |
 | `Gain` | int | 200 | Camera gain to match (Seestar S30 default) |
-| `RawDarksFolder` | string | _(empty)_ | Folder scanned by the stacker for raw dark frames |
 | `MasterLibraryFolder` | string | _(empty)_ | Folder where stacker writes master FITS files |
 | `MinFrameCount` | int | 20 | Internal fixed minimum frames required to stack a group (hidden in UI) |
 | `MaxFrameCount` | int | 50 | Internal fixed maximum frames stacked per group (most recent frames, hidden in UI) |

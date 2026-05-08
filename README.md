@@ -21,11 +21,19 @@ If a valid master exists, it skips capture. If not, it captures internally using
 - `SeeDark Stack Master Darks` (sequence instruction)
   - Scans raw dark FITS and builds master FITS
 
+## Install
+
+Since SeeDark is not currently in the NINA plugin repository, install it manually:
+
+1. Create this folder if it does not exist:
+   - `%LOCALAPPDATA%\NINA\Plugins\3.0.0\SeeDark\`
+2. Drop `NINA.Plugin.SeeDark.dll` into that folder.
+3. Restart NINA.
+
 ## Quick Start
 
-1. Set plugin options:
-   - `Master library folder`
-   - `Raw darks folder`
+1. Set plugin option:
+   - `Master library folder` (required for runtime matching/capture decisions)
 2. Add `SeeDark Dark Manager` to your sequence.
 3. Set container exposure and gain to your intended dark profile.
 4. Run sequence.
@@ -61,7 +69,7 @@ Proactive next-bucket behavior (Auto only):
 
 `SeeDark Stack Master Darks`:
 
-- scans `RawDarksFolder` recursively for dark FITS,
+- scans NINA's darks location (`<NINA FilePath>\CALIBRATION\DARKs`) recursively for dark FITS,
 - groups by `(temp bucket, exposure, gain, scope ID)`,
 - uses most recent valid frames within age rules,
 - rebuilds only missing/expired masters,
@@ -84,7 +92,7 @@ Saved to `%LOCALAPPDATA%\\NINA\\SeeDark\\settings.json`.
 Common user-facing options include:
 
 - target exposure, gain, max age,
-- raw darks folder, master library folder,
+- master library folder (runtime),
 - temp bucket size (`2C` or `3C`),
 - lifecycle/archive options,
 - optional Discord webhook + verbose per-frame posting.
@@ -98,6 +106,8 @@ Advanced/internal controls (not shown in normal UI) include:
 ## Notes for Existing Libraries
 
 If you want to keep pre-plugin masters untouched, use a dedicated `Master library folder` for SeeDark-managed masters.
+
+The stacker reads raws from NINA's darks location (`<NINA FilePath>\CALIBRATION\DARKs`), not a SeeDark-specific folder setting.
 
 ## Logs
 
