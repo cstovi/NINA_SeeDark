@@ -61,7 +61,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Dark Stacker (`StackMasterDarksInstruction.cs`)
 
-1. Scans NINA's darks location (`<NINA FilePath>\CALIBRATION\DARKs`) recursively for `*.fit*` with `FILTER=DARK`
+1. Scans configured `RawDarksFolder` recursively for `*.fit*` with `FILTER=DARK`
 2. Header fallbacks: `DATE-LOC`→`DATE-OBS`, `EXPTIME`→`EXPOSURE`, `CCD-TEMP`→`SET-TEMP`
 3. Session date rebasing: if `hour < 12`, subtract one day (sessions span midnight)
 4. Groups by `(tempBucket, exposure, gain, scopeId)` and uses the most recent valid frames (strict age window by FITS date)
@@ -87,6 +87,7 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `MaxAgeDays` | int | 180 | Max age of an acceptable dark |
 | `Gain` | int | 200 | Camera gain to match (Seestar S30 default) |
 | `MasterLibraryFolder` | string | _(empty)_ | Folder where stacker writes master FITS files |
+| `RawDarksFolder` | string | _(empty)_ | Required folder where SeeDark reads raw DARK FITS for stacking and same-night sufficiency checks |
 | `MinFrameCount` | int | 20 | Internal fixed minimum frames required to stack a group (hidden in UI) |
 | `MaxFrameCount` | int | 50 | Internal fixed maximum frames stacked per group (most recent frames, hidden in UI) |
 | `DefaultExecutionMode` | int | 1 | Default for new containers (`1=Auto`, `0=Manual`); no UI — reserved for future advanced mode |

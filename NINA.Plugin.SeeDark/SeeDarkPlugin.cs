@@ -55,6 +55,7 @@ namespace NINA.Plugin.SeeDark {
             MaxAgeDays            = Settings.MaxAgeDays;
             Gain                  = Settings.Gain;
             MasterLibraryFolder   = Settings.MasterLibraryFolder;
+            RawDarksFolder        = Settings.RawDarksFolder;
             MinFrameCount         = Settings.MinFrameCount;
             MaxFrameCount         = Settings.MaxFrameCount;
             DefaultExecutionMode  = NormalizeExecutionMode((DarkExecutionMode)Settings.DefaultExecutionMode);
@@ -110,6 +111,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.MaxAgeDays          = _maxAgeDays;
                 Settings.Gain                = _gain;
                 Settings.MasterLibraryFolder = _masterLibraryFolder;
+                Settings.RawDarksFolder      = _rawDarksFolder;
                 Settings.MinFrameCount       = _minFrameCount;
                 Settings.MaxFrameCount       = _maxFrameCount;
                 Settings.DefaultExecutionMode = (int)_defaultExecutionMode;
@@ -166,6 +168,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.MaxAgeDays = latest.MaxAgeDays;
                 Settings.Gain = latest.Gain;
                 Settings.MasterLibraryFolder = latest.MasterLibraryFolder;
+                Settings.RawDarksFolder = latest.RawDarksFolder;
                 Settings.MinFrameCount = latest.MinFrameCount;
                 Settings.MaxFrameCount = latest.MaxFrameCount;
                 Settings.DefaultExecutionMode = latest.DefaultExecutionMode;
@@ -184,6 +187,7 @@ namespace NINA.Plugin.SeeDark {
                 _maxAgeDays = latest.MaxAgeDays;
                 _gain = latest.Gain;
                 _masterLibraryFolder = latest.MasterLibraryFolder;
+                _rawDarksFolder = latest.RawDarksFolder;
                 _minFrameCount = latest.MinFrameCount;
                 _maxFrameCount = latest.MaxFrameCount;
                 _defaultExecutionMode = NormalizeExecutionMode((DarkExecutionMode)latest.DefaultExecutionMode);
@@ -238,11 +242,9 @@ namespace NINA.Plugin.SeeDark {
             }
         }
 
-        public string GetNinaRawDarksFolder() {
+        public string GetConfiguredRawDarksFolder() {
             try {
-                var basePath = ProfileService.ActiveProfile?.ImageFileSettings?.FilePath;
-                if (string.IsNullOrWhiteSpace(basePath)) return "";
-                return Path.Combine(basePath, "CALIBRATION", "DARKs");
+                return _rawDarksFolder?.Trim() ?? "";
             } catch {
                 return "";
             }
@@ -270,6 +272,12 @@ namespace NINA.Plugin.SeeDark {
         public string MasterLibraryFolder {
             get => _masterLibraryFolder;
             set { _masterLibraryFolder = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private string _rawDarksFolder = "";
+        public string RawDarksFolder {
+            get => _rawDarksFolder;
+            set { _rawDarksFolder = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private int _minFrameCount = 20;

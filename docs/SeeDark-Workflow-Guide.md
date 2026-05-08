@@ -125,6 +125,12 @@ Below are the main settings and what changing them usually means.
 - What it does: where SeeDark writes and scans master FITS.
 - Implication: this folder is the runtime source of truth for master availability checks.
 
+### Raw Darks Folder
+
+- What it does: points SeeDark to the raw DARK FITS source used by stacking and same-night sufficiency checks.
+- Required: yes. If unset or invalid, stacker run aborts with a clear configuration error.
+- Implication: set this to the exact folder where your NINA DARK captures are being written for your current profile/pattern setup.
+
 ### Temp Bucket Size (2C or 3C)
 
 - What it does: controls temperature band width.

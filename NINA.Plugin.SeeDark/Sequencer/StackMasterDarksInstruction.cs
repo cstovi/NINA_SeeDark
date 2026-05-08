@@ -50,11 +50,16 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         public override object Clone() => new StackMasterDarksInstruction(this);
 
         private void RunStack(CancellationToken token) {
-            var rawFolder    = _plugin.GetNinaRawDarksFolder();
+            var rawFolder    = _plugin.GetConfiguredRawDarksFolder();
             var masterFolder = _plugin.Settings.MasterLibraryFolder;
 
-            if (string.IsNullOrWhiteSpace(rawFolder) || !Directory.Exists(rawFolder)) {
-                Log("❌ NINA DARK folder missing (Imaging > File settings) — aborting"); return;
+            if (string.IsNullOrWhiteSpace(rawFolder)) {
+                Log("❌ Raw darks folder is not configured. Set it in SeeDark plugin options — aborting");
+                return;
+            }
+            if (!Directory.Exists(rawFolder)) {
+                Log($"❌ Raw darks folder does not exist: {rawFolder} — aborting");
+                return;
             }
             if (string.IsNullOrWhiteSpace(masterFolder)) {
                 Log("❌ Master library folder not configured — aborting"); return;

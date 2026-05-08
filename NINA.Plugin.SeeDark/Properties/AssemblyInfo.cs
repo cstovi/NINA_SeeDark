@@ -17,7 +17,7 @@ Each container has its own exposure and gain settings, so you can run multiple c
 
 SeeDark Stack Master Darks
 
-Add this instruction to build masters from raws. It scans your NINA DARK capture folder (from Imaging > File settings), groups frames by temperature band, gain, and exposure, and writes a per-pixel median master FITS for each group that is missing or stale — leaving fresh masters untouched.
+Add this instruction to build masters from raws. It scans your configured Raw darks folder, groups frames by temperature band, gain, and exposure, and writes a per-pixel median master FITS for each group that is missing or stale — leaving fresh masters untouched.
 
 An optional Discord webhook mirrors key events (skip decisions, capture results, stack completions) to a channel of your choice. Enable Verbose in the plugin options to also receive per-frame capture lines — a dedicated channel is recommended for that setting.")]
 [assembly: AssemblyCompany("Carl Stovell")]

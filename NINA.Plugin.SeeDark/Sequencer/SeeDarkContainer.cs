@@ -400,7 +400,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             string scopeId,
             int bucketStepC,
             DateTime sessionDate) {
-            var rawFolder = _plugin.GetNinaRawDarksFolder();
+            var rawFolder = _plugin.GetConfiguredRawDarksFolder();
             if (string.IsNullOrWhiteSpace(rawFolder) || !Directory.Exists(rawFolder))
                 return 0;
 
