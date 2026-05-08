@@ -103,6 +103,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             const int minFrames = 20;
             const int maxAttemptsPerSegment = 30;
             const int maxConsecutiveBucketMisses = 3;
+            const int maxSameNightOvershootFrames = 60;
 
             double startTemp = GetSensorTempFromMediator();
             if (double.IsNaN(startTemp)) {
@@ -112,14 +113,23 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
 
             int bucketStepC = Math.Max(1, _plugin.Settings.TempBucketSize);
+            int maxNeededFramesPerBucket = Math.Max(1, _plugin.Settings.MaxFrameCount);
             int currentBucket = TemperatureBucketing.ToBucket(startTemp, bucketStepC);
             var masters = ScanMasterFolder();
             var masterCutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
             var scopeId = _plugin.GetScopeId();
+            DateTime sessionDate = ToSessionDate(DateTime.Now);
 
+            int currentTonightCount = CountSameNightRawFrames(currentBucket, TargetExposure, Gain, scopeId, bucketStepC, sessionDate);
+            bool enoughCurrentTonight = currentTonightCount >= maxNeededFramesPerBucket;
             bool lackCurrent = masters.Length == 0 || LacksAcceptableMaster(currentBucket, masters, masterCutoff, scopeId);
-            bool lackNextWarmer = masters.Length > 0 && LacksAcceptableMaster(currentBucket + bucketStepC, masters, masterCutoff, scopeId);
-            bool proactiveWarmup = ExecutionMode == DarkExecutionMode.Auto && masters.Length > 0 && !lackCurrent && lackNextWarmer;
+            bool currentSatisfied = !lackCurrent || enoughCurrentTonight;
+
+            int nextWarmerBucket = currentBucket + bucketStepC;
+            int nextWarmerTonightCount = CountSameNightRawFrames(nextWarmerBucket, TargetExposure, Gain, scopeId, bucketStepC, sessionDate);
+            bool lackNextWarmer = masters.Length > 0 && LacksAcceptableMaster(nextWarmerBucket, masters, masterCutoff, scopeId);
+            bool nextWarmerNeedsCollection = lackNextWarmer && nextWarmerTonightCount < maxNeededFramesPerBucket;
+            bool proactiveWarmup = ExecutionMode == DarkExecutionMode.Auto && masters.Length > 0 && currentSatisfied && nextWarmerNeedsCollection;
             int targetBucket = proactiveWarmup ? currentBucket + bucketStepC : currentBucket;
 
             var darkFilter = _plugin.GetDarkFilter();
@@ -131,7 +141,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             int maxWarmerSteps = Math.Clamp(_plugin.Settings.AutoDarkMaxWarmerBucketSteps, 0, 3);
 
             if (proactiveWarmup)
-                Log($"🌡️ Proactive Auto: warming toward {targetBucket}°C bucket (current {currentBucket}°C already has a master; capturing until temp reaches target band).");
+                Log($"🌡️ Proactive Auto: warming toward {targetBucket}°C bucket (current {currentBucket}°C is already satisfied by master/raw sufficiency; capturing until temp reaches target band).");
             Log($"🤖 Auto mode starting dark capture: target {targetFrames} accepted per segment, min {minFrames}, max {maxAttemptsPerSegment} attempts per segment, starting bucket {targetBucket}°C, warmer continuation ≤{maxWarmerSteps} band(s) above that bucket.");
             Log("🔁 Retargeting to another bucket (no master there) resets the segment attempt count; cooler buckets always allowed. Warmer retargets beyond your setting are blocked.");
 
@@ -153,6 +163,23 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
 
             while (!token.IsCancellationRequested && attempts < maxAttemptsPerSegment && goodFrames < targetFrames) {
+                int targetTonightCount = CountSameNightRawFrames(targetBucket, TargetExposure, Gain, scopeId, bucketStepC, sessionDate);
+                bool targetHasBaseSufficiency = targetTonightCount >= maxNeededFramesPerBucket;
+                int targetNextWarmerBucket = targetBucket + bucketStepC;
+                int targetNextWarmerTonightCount = CountSameNightRawFrames(targetNextWarmerBucket, TargetExposure, Gain, scopeId, bucketStepC, sessionDate);
+                bool targetNextWarmerMissingMaster = LacksAcceptableMaster(targetNextWarmerBucket, masters, masterCutoff, scopeId);
+                bool targetNextWarmerNeedsCollection = targetNextWarmerMissingMaster && targetNextWarmerTonightCount < maxNeededFramesPerBucket;
+                bool allowOvershootForWarmerProgress = targetHasBaseSufficiency
+                    && targetTonightCount < maxSameNightOvershootFrames
+                    && targetNextWarmerNeedsCollection;
+                if (targetHasBaseSufficiency && !allowOvershootForWarmerProgress) {
+                    Log($"🛑 Bucket {targetBucket}°C already has enough same-night raws ({targetTonightCount}/{maxNeededFramesPerBucket}); stopping capture for this bucket.");
+                    break;
+                }
+                if (allowOvershootForWarmerProgress) {
+                    Log($"🌡️ Bucket {targetBucket}°C reached same-night sufficiency ({targetTonightCount}/{maxNeededFramesPerBucket}); allowing bounded overshoot toward warmer bucket {targetNextWarmerBucket}°C (limit {maxSameNightOvershootFrames}).", discordVerboseOnly: true);
+                }
+
                 attempts++;
                 var capture = new CaptureSequence {
                     ExposureTime = TargetExposure,
@@ -288,10 +315,17 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             var masters = ScanMasterFolder();
             var cutoff = DateTime.Now.AddDays(-_plugin.Settings.MaxAgeDays);
+            DateTime sessionDate = ToSessionDate(DateTime.Now);
+            int maxNeededFramesPerBucket = Math.Max(1, _plugin.Settings.MaxFrameCount);
+            int currentTonightCount = CountSameNightRawFrames(bucket, TargetExposure, Gain, scopeId, bucketStepC, sessionDate);
+            bool enoughCurrentTonight = currentTonightCount >= maxNeededFramesPerBucket;
             bool lackCurrent = masters.Length == 0 || LacksAcceptableMaster(bucket, masters, cutoff, scopeId);
+            bool currentSatisfied = !lackCurrent || enoughCurrentTonight;
             int nextWarmerBucket = bucket + bucketStepC;
+            int nextWarmerTonightCount = CountSameNightRawFrames(nextWarmerBucket, TargetExposure, Gain, scopeId, bucketStepC, sessionDate);
             bool lackNextWarmer = masters.Length > 0 && LacksAcceptableMaster(nextWarmerBucket, masters, cutoff, scopeId);
-            bool proactiveAutoNext = ExecutionMode == DarkExecutionMode.Auto && masters.Length > 0 && !lackCurrent && lackNextWarmer;
+            bool nextWarmerNeedsCollection = lackNextWarmer && nextWarmerTonightCount < maxNeededFramesPerBucket;
+            bool proactiveAutoNext = ExecutionMode == DarkExecutionMode.Auto && masters.Length > 0 && currentSatisfied && nextWarmerNeedsCollection;
 
             bool needsDarks;
             if (masters.Length == 0) {
@@ -301,10 +335,17 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 Log($"🌑 Proactive Auto: have master for {bucket}°C bucket but not for next warmer {nextWarmerBucket}°C — starting capture early before temp reaches next band.");
                 needsDarks = true;
             } else {
-                needsDarks = lackCurrent;
-                Log(needsDarks
-                    ? "🌑 No matching dark found — darks needed!"
-                    : $"✅ Matching dark exists — skipping ({bucket}°C ✓, {nextWarmerBucket}°C ✓)");
+                if (lackCurrent && enoughCurrentTonight) {
+                    Log($"✅ Missing master for {bucket}°C but enough same-night raws already cached ({currentTonightCount}/{maxNeededFramesPerBucket}) — skipping this run.");
+                }
+                needsDarks = !currentSatisfied;
+                if (needsDarks) {
+                    Log("🌑 No matching dark found — darks needed!");
+                } else if (!lackCurrent) {
+                    Log($"✅ Matching dark exists — skipping ({bucket}°C ✓, {nextWarmerBucket}°C ✓)");
+                } else {
+                    Log($"✅ Same-night raw sufficiency reached for {bucket}°C ({currentTonightCount}/{maxNeededFramesPerBucket}) — skipping additional capture this run.");
+                }
             }
             if (!needsDarks) return false;
 
@@ -350,6 +391,96 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 r.Gain == Gain &&
                 r.Scope == scopeId &&
                 r.DateCreated >= masterCutoff);
+        }
+
+        private int CountSameNightRawFrames(
+            int bucket,
+            double exposure,
+            int gain,
+            string scopeId,
+            int bucketStepC,
+            DateTime sessionDate) {
+            var rawFolder = _plugin.GetNinaRawDarksFolder();
+            if (string.IsNullOrWhiteSpace(rawFolder) || !Directory.Exists(rawFolder))
+                return 0;
+
+            string archiveFolder = Path.Combine(rawFolder, "_archived");
+            int count = 0;
+            foreach (var path in Directory.GetFiles(rawFolder, "*.fit*", SearchOption.AllDirectories)) {
+                if (IsUnderDirectory(path, archiveFolder))
+                    continue;
+                if (!TryReadRawFrameInfo(path, bucketStepC, out var info))
+                    continue;
+                if (!string.IsNullOrWhiteSpace(info.ScopeId) &&
+                    !string.IsNullOrWhiteSpace(scopeId) &&
+                    !string.Equals(info.ScopeId, scopeId, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (info.TempBucket != bucket)
+                    continue;
+                if (Math.Abs(info.Exposure - exposure) >= 0.5)
+                    continue;
+                if (info.Gain != gain)
+                    continue;
+                if (info.SessionDate.Date != sessionDate.Date)
+                    continue;
+                count++;
+            }
+            return count;
+        }
+
+        private static bool TryReadRawFrameInfo(string path, int bucketStepC, out RawFrameInfo info) {
+            info = default;
+            var h = FitsHeaderReader.ReadHeaders(path);
+            if (h == null)
+                return false;
+
+            h.TryGetValue("DATE-LOC", out var dateStr);
+            if (string.IsNullOrWhiteSpace(dateStr))
+                h.TryGetValue("DATE-OBS", out dateStr);
+            h.TryGetValue("EXPTIME", out var exptimeStr);
+            if (string.IsNullOrWhiteSpace(exptimeStr))
+                h.TryGetValue("EXPOSURE", out exptimeStr);
+            h.TryGetValue("CCD-TEMP", out var tempStr);
+            if (string.IsNullOrWhiteSpace(tempStr))
+                h.TryGetValue("SET-TEMP", out tempStr);
+            h.TryGetValue("INSTRUME", out var instrume);
+            h.TryGetValue("GAIN", out var gainStr);
+
+            if (string.IsNullOrWhiteSpace(dateStr) ||
+                string.IsNullOrWhiteSpace(exptimeStr) ||
+                string.IsNullOrWhiteSpace(tempStr) ||
+                string.IsNullOrWhiteSpace(instrume))
+                return false;
+
+            if (!DateTime.TryParse(dateStr, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var date))
+                return false;
+
+            if (!double.TryParse(exptimeStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var exposure))
+                return false;
+            if (!double.TryParse(tempStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var temp))
+                return false;
+            int gain = int.TryParse(gainStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var g) ? g : 0;
+
+            var parts = instrume.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            string scopeId = parts.Length >= 2 ? parts[1] : instrume;
+            int bucket = TemperatureBucketing.ToBucket(temp, Math.Max(1, bucketStepC));
+            info = new RawFrameInfo(exposure, bucket, gain, scopeId, ToSessionDate(date));
+            return true;
+        }
+
+        private static DateTime ToSessionDate(DateTime date) {
+            if (date.Hour < 12) date = date.AddDays(-1);
+            return date.Date;
+        }
+
+        private static bool IsUnderDirectory(string filePath, string directoryPath) {
+            if (string.IsNullOrWhiteSpace(directoryPath))
+                return false;
+            var fullFile = Path.GetFullPath(filePath);
+            var fullDir = Path.GetFullPath(directoryPath);
+            if (!fullDir.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                fullDir += Path.DirectorySeparatorChar;
+            return fullFile.StartsWith(fullDir, StringComparison.OrdinalIgnoreCase);
         }
 
         private double GetSensorTempFromMediator() {
@@ -439,6 +570,13 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
             return clone;
         }
+
+        private readonly record struct RawFrameInfo(
+            double Exposure,
+            int TempBucket,
+            int Gain,
+            string ScopeId,
+            DateTime SessionDate);
 
         private record MasterRecord(int Temp, double Exposure, int Gain, string Scope, DateTime DateCreated);
     }

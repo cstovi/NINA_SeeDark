@@ -62,8 +62,14 @@ Temperature movement behavior:
 
 Proactive next-bucket behavior (Auto only):
 
-- if current bucket already has a valid master but the next warmer bucket does not, SeeDark starts immediately for that warmer bucket (no start-window wait),
+- if current bucket is already satisfied (fresh master, or enough same-night raws cached) but the next warmer bucket still needs collection, SeeDark starts immediately for that warmer bucket (no start-window wait),
 - while still below target band, it takes warmup exposures that are not counted toward the accepted-frame target and do not trigger drift-stop logic.
+
+Same-night raw sufficiency guard:
+
+- Auto checks same-night raw dark count per key `(temp bucket, exposure, gain, scope ID)` and avoids extra capture once enough raws are already cached for that bucket.
+- To preserve A->B thermal progression on uncooled sensors, Auto may temporarily overshoot bucket A up to 60 raws while warming into a needed bucket B.
+- The intent is to avoid all-night over-capture in stable temperatures, while still allowing useful warmer-bucket seeding.
 
 ## Stacker and Lifecycle
 
@@ -74,6 +80,10 @@ Proactive next-bucket behavior (Auto only):
 - uses most recent valid frames within age rules,
 - rebuilds only missing/expired masters,
 - writes SIRIL/PixInsight float32 masters (and optional NINA live masters).
+
+Operational guidance:
+
+- In normal use, run stacking once near end of session rather than after every dark container.
 
 Lifecycle controls are opt-in:
 
