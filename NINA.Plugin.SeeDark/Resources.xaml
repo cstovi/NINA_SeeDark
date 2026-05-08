@@ -18,11 +18,11 @@
                 <StackPanel Margin="0,6,0,6">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Exposure (s):" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                        <TextBox Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=LostFocus, FallbackValue=20, TargetNullValue=20}"
+                        <TextBox Text="{Binding TargetExposure, StringFormat={}{0:F0}, UpdateSourceTrigger=LostFocus}"
                                  KeyDown="CommitOnEnter_KeyDown"
                                  Width="50" VerticalAlignment="Center" Margin="0,0,12,0"/>
                         <TextBlock Text="Gain:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                        <TextBox Text="{Binding Gain, UpdateSourceTrigger=LostFocus, FallbackValue=200, TargetNullValue=200}"
+                        <TextBox Text="{Binding Gain, UpdateSourceTrigger=LostFocus}"
                                  KeyDown="CommitOnEnter_KeyDown"
                                  Width="50" VerticalAlignment="Center" Margin="0,0,12,0"/>
                     </StackPanel>
