@@ -38,6 +38,10 @@ Since SeeDark is not currently in the NINA plugin repository, install it manuall
 3. Set container exposure and gain to your intended dark profile.
 4. Run sequence.
 
+For a plain-English explanation of runtime behavior and settings implications, see:
+
+- `docs/SeeDark-Workflow-Guide.md`
+
 Notes:
 
 - Current container workflow is Auto dark capture.
