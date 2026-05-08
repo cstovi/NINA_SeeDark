@@ -143,7 +143,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
             if (proactiveWarmup)
                 Log($"🌡️ Proactive Auto: warming toward {targetBucket}°C bucket (current {currentBucket}°C is already satisfied by master/raw sufficiency; capturing until temp reaches target band).");
-            Log($"🤖 Auto mode starting dark capture: target {targetFrames} accepted per segment, min {minFrames}, max {maxAttemptsPerSegment} attempts per segment, starting bucket {targetBucket}°C, warmer continuation ≤{maxWarmerSteps} band(s) above that bucket.");
+            Log($"🤖 Starting dark capture: target {targetFrames} accepted per segment, min {minFrames}, max {maxAttemptsPerSegment} attempts per segment, starting bucket {targetBucket}°C, warmer continuation ≤{maxWarmerSteps} band(s) above that bucket.");
             Log("🔁 Retargeting to another bucket (no master there) resets the segment attempt count; cooler buckets always allowed. Warmer retargets beyond your setting are blocked.");
 
             try {
