@@ -56,9 +56,9 @@
                          ToolTip="Where finished master darks are stored. Used by both the gap check and the stacker."/>
                 <Button Grid.Row="0" Grid.Column="2" Content="..." Width="28" Margin="8,0,0,4" VerticalAlignment="Center" Click="BrowseMasterLibraryFolder_Click"/>
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Raw darks folder:" VerticalAlignment="Center" Margin="0,0,8,4"
-                           ToolTip="Required. SeeDark saves captured DARK raws here and stack/sufficiency checks read from here."/>
+                           ToolTip="Raw darks folder is required. SeeDark writes DARK captures here and reads raws from here."/>
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding RawDarksFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"
-                         ToolTip="Required. SeeDark saves captured DARK raws here and stack/sufficiency checks read from here."/>
+                         ToolTip="Raw darks folder is required. SeeDark writes DARK captures here and reads raws from here."/>
                 <Button Grid.Row="1" Grid.Column="2" Content="..." Width="28" Margin="8,0,0,4" VerticalAlignment="Center" Click="BrowseRawDarksFolder_Click"/>
                 <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
                            Text="Raw darks folder is required. SeeDark writes DARK captures here and reads raws from here."
