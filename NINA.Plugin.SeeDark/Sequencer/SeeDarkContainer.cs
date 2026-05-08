@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -575,15 +576,70 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
         private string? ResolveSavedImagePath(object imageData) {
             try {
-                var type = imageData.GetType();
-                foreach (var propName in new[] { "FilePath", "Path", "FileName", "Filename" }) {
-                    var prop = type.GetProperty(propName);
-                    if (prop == null) continue;
-                    if (prop.GetValue(imageData) is string path && !string.IsNullOrWhiteSpace(path))
-                        return path;
-                }
+                var visited = new HashSet<object>(ReferenceEqualityComparer.Instance);
+                return ResolveSavedImagePathRecursive(imageData, 0, visited);
             } catch { }
             return null;
+        }
+
+        private string? ResolveSavedImagePathRecursive(object? value, int depth, HashSet<object> visited) {
+            if (value == null || depth > 4) return null;
+            if (!visited.Add(value)) return null;
+
+            if (value is string textPath) {
+                if (LooksLikeFitsPath(textPath) && File.Exists(textPath))
+                    return textPath;
+                return null;
+            }
+
+            if (value is IDictionary dictionary) {
+                foreach (DictionaryEntry entry in dictionary) {
+                    var fromKey = ResolveSavedImagePathRecursive(entry.Key, depth + 1, visited);
+                    if (!string.IsNullOrWhiteSpace(fromKey)) return fromKey;
+                    var fromValue = ResolveSavedImagePathRecursive(entry.Value, depth + 1, visited);
+                    if (!string.IsNullOrWhiteSpace(fromValue)) return fromValue;
+                }
+                return null;
+            }
+
+            if (value is IEnumerable enumerable && value is not string) {
+                foreach (var item in enumerable) {
+                    var fromItem = ResolveSavedImagePathRecursive(item, depth + 1, visited);
+                    if (!string.IsNullOrWhiteSpace(fromItem)) return fromItem;
+                }
+                return null;
+            }
+
+            var type = value.GetType();
+            foreach (var propName in new[] { "FilePath", "Path", "FileName", "Filename", "SavedPath", "OutputPath", "ImagePath" }) {
+                var prop = type.GetProperty(propName);
+                if (prop == null) continue;
+                object? propValue = null;
+                try { propValue = prop.GetValue(value); } catch { }
+                var fromNamed = ResolveSavedImagePathRecursive(propValue, depth + 1, visited);
+                if (!string.IsNullOrWhiteSpace(fromNamed)) return fromNamed;
+            }
+
+            foreach (var prop in type.GetProperties()) {
+                if (prop.GetIndexParameters().Length > 0) continue;
+                if (prop.PropertyType.IsPrimitive || prop.PropertyType.IsEnum) continue;
+
+                object? propValue = null;
+                try { propValue = prop.GetValue(value); } catch { }
+                var fromProp = ResolveSavedImagePathRecursive(propValue, depth + 1, visited);
+                if (!string.IsNullOrWhiteSpace(fromProp)) return fromProp;
+            }
+
+            return null;
+        }
+
+        private static bool LooksLikeFitsPath(string path) {
+            if (string.IsNullOrWhiteSpace(path)) return false;
+            if (!Path.IsPathRooted(path)) return false;
+            var extension = Path.GetExtension(path);
+            return extension.Equals(".fit", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".fits", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".fts", StringComparison.OrdinalIgnoreCase);
         }
 
         private void Log(string message, bool discordVerboseOnly = false, bool fileOnly = false) {
