@@ -33,6 +33,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
         private readonly SeeDarkPlugin _plugin;
         private readonly string _logFilePath;
+        /// <summary>Increments per saved Auto DARK so NINA <c>$$FRAMENR$$</c> / ExposureNumber is not stuck at 0000.</summary>
+        private int _autoDarkSaveSequence;
 
         private double _targetExposure = 20.0;
         [JsonProperty]
@@ -105,6 +107,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             const int maxAttemptsPerSegment = 30;
             const int maxConsecutiveBucketMisses = 3;
             const int maxSameNightOvershootFrames = 60;
+
+            _autoDarkSaveSequence = 0;
 
             double startTemp = GetSensorTempFromMediator();
             if (double.IsNaN(startTemp)) {
@@ -568,6 +572,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 if (imageData == null) {
                     throw new InvalidOperationException("Captured dark frame could not be converted to image data.");
                 }
+                _autoDarkSaveSequence++;
+                imageData.MetaData.Image.ExposureNumber = _autoDarkSaveSequence;
                 var darkPattern = _plugin.GetNinaDarkFilePattern();
                 if (string.IsNullOrWhiteSpace(darkPattern)) {
                     throw new InvalidOperationException("NINA DARK file pattern could not be resolved.");
