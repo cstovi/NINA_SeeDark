@@ -205,7 +205,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 var prefix = $"master_dark_{key.Exposure:F0}s_{key.TempBucket}c_{key.ScopeId}_";
                 foreach (var old in Directory.GetFiles(masterFolder, prefix + "*.fit*")) {
                     File.Delete(old);
-                    Log($"  Removed superseded: {Path.GetFileName(old)}");
+                    Log($"  Removed superseded: {old}");
                 }
 
                 var ts          = DateTime.Now.ToString("yyyyMMddHHmmss");
@@ -222,11 +222,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 var sirilPath = Path.Combine(masterFolder, $"{prefix}SIRIL_{ts}.fit");
                 WriteFitsFloat(sirilPath, median, width, height, extraHeaders);
-                Log($"💾 Written SIRIL: {Path.GetFileName(sirilPath)}");
+                Log($"💾 Written SIRIL: {sirilPath}");
                 if (_plugin.Settings.WriteNinaLiveMasters) {
                     var ninalivePath = Path.Combine(masterFolder, $"{prefix}NINALIVE_{ts}.fit");
                     WriteFitsUInt16(ninalivePath, median, width, height, extraHeaders);
-                    Log($"💾 Written NINALIVE: {Path.GetFileName(ninalivePath)}");
+                    Log($"💾 Written NINALIVE: {ninalivePath}");
                 }
 
                 string newestUsedDate = selectedFrames.Max(f => f.SessionTimestamp).ToString("yyyy-MM-dd");

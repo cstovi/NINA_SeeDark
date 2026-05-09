@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.13.0 - 2026-05-09
+
+- Stack Master Darks text log now records full paths when writing SIRIL/NINALIVE masters and when removing superseded files (not only filenames).
+
 ## v1.12.0 - 2026-05-08
 
 - Removed raw dark archiving behavior and lifecycle archive toggle.

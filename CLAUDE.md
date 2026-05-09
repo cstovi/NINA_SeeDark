@@ -8,6 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **SeeDark** conditionally triggers dark frame acquisition when master darks are missing/stale or when same-night raw dark sufficiency has not yet been met for the current camera temperature, gain, scope, and exposure time. It also includes a FITS stacker that replaces the Python `master_darks_with_checks_and_ninalive.py` script.
 
+## Change Hygiene (Mandatory)
+
+Any meaningful project change must include updates to related user-facing text/docs in the same session.
+
+- `README.md`
+- `CLAUDE.md` (this file)
+- `CHANGELOG.md`
+- Relevant docs in `docs/` (for example `docs/SeeDark-Workflow-Guide.md`)
+
 ## Plugin Components (MEF)
 
 | Class | Interface | Purpose |
@@ -106,4 +115,4 @@ No `DarkLibrary.csv` is required or consumed by the plugin.
 ## Logging
 
 - SeeDarkContainer: `%LOCALAPPDATA%\NINA\SeeDark\seedark_{yyyy-MM-dd_HH-mm-ss}.log`
-- StackMasterDarksInstruction: `%LOCALAPPDATA%\NINA\SeeDark\stack_{yyyy-MM-dd_HH-mm-ss}.log`
+- StackMasterDarksInstruction: `%LOCALAPPDATA%\NINA\SeeDark\stack_{yyyy-MM-dd_HH-mm-ss}.log` (written and superseded master lines include full file paths under the configured master library folder)
