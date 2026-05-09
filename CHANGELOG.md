@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.14.0 - 2026-05-09
+
+- Stack Master Darks: master filenames now include camera gain (`_g{gain}_`) so different gains no longer share the same prefix and overwrite each other; superseded-file cleanup is gain-scoped. Master discovery still uses FITS headers, so older gain-less filenames remain readable.
+
 ## v1.13.0 - 2026-05-09
 
 - Stack Master Darks text log now records full paths when writing SIRIL/NINALIVE masters and when removing superseded files (not only filenames).

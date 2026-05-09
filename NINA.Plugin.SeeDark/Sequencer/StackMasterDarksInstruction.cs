@@ -202,7 +202,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 else
                     Log("✅ Noise reduction check passed (master noise lower than representative single-frame noise).");
 
-                var prefix = $"master_dark_{key.Exposure:F0}s_{key.TempBucket}c_{key.ScopeId}_";
+                var prefix = $"master_dark_{key.Exposure:F0}s_{key.TempBucket}c_{key.ScopeId}_g{key.Gain}_";
                 foreach (var old in Directory.GetFiles(masterFolder, prefix + "*.fit*")) {
                     File.Delete(old);
                     Log($"  Removed superseded: {old}");
@@ -231,11 +231,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                 string newestUsedDate = selectedFrames.Max(f => f.SessionTimestamp).ToString("yyyy-MM-dd");
                 string reasonText = matchingMaster == null
-                    ? "missing"
+                    ? "was missing"
                     : shouldRebuildForMoreRaws
-                        ? "more raws available"
-                        : "expired";
-                Log($"✅ Master Dark {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} was {reasonText}. Successfully rebuilt using cached raw frames from {newestUsedDate}.");
+                        ? "had more raw darks available"
+                        : "had expired";
+                Log($"✅ Master Dark {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} {reasonText}. Successfully rebuilt using cached raw frames from {newestUsedDate}.");
             }
 
             if (deleteRawsEnabled) {

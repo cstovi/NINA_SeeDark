@@ -83,7 +83,7 @@ Any meaningful project change must include updates to related user-facing text/d
 
 FITS I/O is inline — no NuGet. Uses `System.Buffers.Binary.BinaryPrimitives` for big-endian reads/writes. Headers are 80-char fixed-width cards in 2880-byte blocks.
 
-Master filename: `master_dark_{exp:F0}s_{bucket}c_{scopeId}_{SIRIL|NINALIVE}_{yyyyMMddHHmmss}.fit`
+Master filename: `master_dark_{exp:F0}s_{bucket}c_{scopeId}_g{gain}_{SIRIL|NINALIVE}_{yyyyMMddHHmmss}.fit`
 
 ## Settings
 
