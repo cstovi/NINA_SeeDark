@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.15.2 - 2026-05-09
+
+- Plugin catalog long description and options panel: credit line for early testing feedback.
+
 ## v1.15.1 - 2026-05-09
 
 - Auto dark save: set sequential `ExposureNumber` on each frame before `SaveToDisk` so `$$FRAMENR$$` in the NINA file pattern increments (NINA derives it from image metadata, which stayed at 0 for sequencer-only captures).
