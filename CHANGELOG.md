@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.15.0 - 2026-05-09
+
+- Raw DARK discovery uses a resolved root: optional **Raw darks folder** (plugin setting) when set; otherwise, when the NINA DARK pattern includes `$$IMAGETYPE$$` in a path segment, only the expanded DARK subtree under NINA image file path (e.g. `CALIBRATION\DARKs`); otherwise the full NINA image path. Auto dark save and optional raw purge use the same root.
+- Plugin options: new **Raw darks folder (optional)** with browse button.
+
 ## v1.14.0 - 2026-05-09
 
 - Stack Master Darks: master filenames now include camera gain (`_g{gain}_`) so different gains no longer share the same prefix and overwrite each other; superseded-file cleanup is gain-scoped. Master discovery still uses FITS headers, so older gain-less filenames remain readable.

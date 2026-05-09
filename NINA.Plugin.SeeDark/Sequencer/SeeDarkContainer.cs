@@ -561,7 +561,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             try {
                 var rawDarksFolder = _plugin.GetNinaDarkRawRootFolder();
                 if (string.IsNullOrWhiteSpace(rawDarksFolder)) {
-                    throw new InvalidOperationException("NINA image file path is not configured.");
+                    throw new InvalidOperationException("Raw dark root is not configured (NINA image file path or Raw darks folder).");
                 }
                 Directory.CreateDirectory(rawDarksFolder);
                 var imageData = await exposureData.ToImageData(null, token);
@@ -582,11 +582,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     throw new IOException("Raw dark save returned no valid file path.");
                 }
                 if (!IsUnderDirectory(savedPath, rawDarksFolder)) {
-                    throw new IOException($"Raw dark save path escaped NINA image file root: {savedPath}");
+                    throw new IOException($"Raw dark save path escaped configured raw dark root: {savedPath}");
                 }
                 Log($"💾 Saved DARK via NINA pattern to {savedPath}", discordVerboseOnly: true, fileOnly: true);
             } catch (Exception ex) {
-                Log($"❌ Auto dark capture aborted: failed to save DARK using NINA image path/pattern rules. {ex.Message}");
+                Log($"❌ Auto dark capture aborted: failed to save DARK to raw dark root using NINA pattern rules. {ex.Message}");
                 throw;
             }
         }

@@ -125,13 +125,19 @@ Below are the main settings and what changing them usually means.
 - What it does: where SeeDark writes and scans master FITS.
 - Implication: this folder is the runtime source of truth for master availability checks.
 
-### NINA DARK Save Path Rules
+### Raw darks folder (optional)
 
-- What it does: SeeDark follows NINA's own save rules for DARK raws.
-- Source of truth: NINA `Image File Path` plus DARK-specific file pattern override (when set), otherwise default file pattern.
-- Implication: Auto-captured DARK raws are saved with NINA token-expanded folders/filenames (including date/type folder layouts).
-- Read side: stacker and same-night sufficiency checks scan from NINA image save root and identify DARK raws via FITS headers.
-- Failure behavior: if an Auto-captured raw cannot be saved via NINA path/pattern rules, Auto dark capture aborts immediately (hard-fail).
+- What it does: when set, this folder is the root for reading raw DARKs (stacker, same-night counts), saving Auto-captured DARKs, and optional raw purge.
+- When empty: SeeDark uses NINA `Image File Path`, but if your DARK **pattern** puts `$$IMAGETYPE$$` in a **folder** (e.g. `CALIBRATION\$$IMAGETYPE$$s\...`), the scan is limited to that expanded subtree (typically `...\CALIBRATION\DARKs`) when that folder exists; if it does not exist yet, SeeDark falls back to scanning the full NINA image path until the folder appears.
+- Implication: large libraries under one image root avoid scanning every FITS when NINA keeps DARKs under a dedicated branch.
+
+### NINA DARK file pattern (save layout)
+
+- What it does: SeeDark uses NINA's DARK file pattern when saving Auto captures (`SaveToDisk` rules).
+- Source of truth: NINA `Image File Path` (or **Raw darks folder** when set) as `FilePath`, plus the profile DARK pattern from `GetFilePattern("DARK")`.
+- Implication: Auto-captured DARK raws use NINA token-expanded subfolders/filenames under that root.
+- Read side: files are still selected by FITS headers (`FILTER=DARK`, etc.); the pattern does not filter filenames on read, only helps derive the scan root when `$$IMAGETYPE$$` is a path segment and **Raw darks folder** is empty.
+- Failure behavior: if an Auto-captured raw cannot be saved via NINA pattern rules, Auto dark capture aborts immediately (hard-fail).
 
 ### Temp Bucket Size (2C or 3C)
 
@@ -147,7 +153,7 @@ Below are the main settings and what changing them usually means.
 
 ### DeleteRawsAfterMaxAge
 
-- What it does: deletes DARK raws older than age policy from the active NINA save location.
+- What it does: deletes DARK raws older than age policy from the resolved raw-dark root (same as stacker scan root).
 - Default: off.
 - Implication: saves storage, but is irreversible for removed raws.
 

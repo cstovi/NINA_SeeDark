@@ -32,8 +32,9 @@ Since SeeDark is not currently in the NINA plugin repository, install it manuall
 
 ## Quick Start
 
-1. Set plugin option:
+1. Set plugin options:
    - `Master library folder` (required for runtime matching/capture decisions)
+   - `Raw darks folder` (optional; when empty, SeeDark derives the scan/save root from NINA image path and your DARK file pattern)
 2. Add `SeeDark Dark Manager` to your sequence.
 3. Set container exposure and gain to your intended dark profile.
 4. Run sequence.

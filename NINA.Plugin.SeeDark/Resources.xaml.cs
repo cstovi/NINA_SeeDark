@@ -20,6 +20,14 @@ namespace NINA.Plugin.SeeDark {
             }
         }
 
+        private void BrowseRawDarksFolder_Click(object sender, RoutedEventArgs e) {
+            if (sender is not FrameworkElement element || element.DataContext is not SeeDarkPlugin plugin) return;
+            var selected = BrowseForFolder(plugin.RawDarksFolder, "Select raw darks folder (optional)");
+            if (!string.IsNullOrWhiteSpace(selected)) {
+                plugin.RawDarksFolder = selected;
+            }
+        }
+
         private void CommitOnEnter_KeyDown(object sender, KeyEventArgs e) {
             if (e.Key != Key.Enter)
                 return;
