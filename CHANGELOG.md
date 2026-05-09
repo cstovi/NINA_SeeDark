@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.16.0 - 2026-05-09
+
+- Removed the plugin **Raw darks folder** option (it was added in v1.15.0). Raw DARK discovery, Auto save, same-night counts, and optional raw purge use **only** NINA **Image File Path** and the profile DARK pattern, with the same `$$IMAGETYPE$$` path narrowing as before. Updated docs accordingly.
+
 ## v1.15.3 - 2026-05-09
 
 - README and workflow guide: recommend a dedicated raw-DARK folder or `$$IMAGETYPE$$`-in-path layout so **Stack Master Darks** does not scan the entire NINA image tree when other FITS live there; README stacker/deletion wording aligned with resolved raw-dark root.

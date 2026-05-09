@@ -34,7 +34,6 @@ Since SeeDark is not currently in the NINA plugin repository, install it manuall
 
 1. Set plugin options:
    - `Master library folder` (required for runtime matching/capture decisions)
-   - `Raw darks folder` (strongly recommended unless your NINA DARK pattern already keeps DARKs in a dedicated subtree—see **Raw DARKs and stacking** below)
 2. Add `SeeDark Dark Manager` to your sequence.
 3. Set container exposure and gain to your intended dark profile.
 4. Run sequence.
@@ -78,11 +77,11 @@ Same-night raw sufficiency guard:
 
 ## Raw DARKs and stacking (important)
 
-The stacker (and same-night raw checks) must discover raw DARK FITS under a **resolved root**: the plugin **Raw darks folder** if set, otherwise NINA **Image File Path**—optionally narrowed to a `DARKs`-style subtree when your DARK **pattern** includes `$$IMAGETYPE$$` in a folder segment.
+The stacker (and same-night raw checks) discover raw DARK FITS under NINA **Image File Path**, **narrowed** to a `DARKs`-style subtree when your DARK **pattern** includes `$$IMAGETYPE$$` in a folder segment (see NINA file pattern settings).
 
-**If that root is the same place you store lights, flats, and other FITS**, SeeDark still has to enumerate **every** `*.fit*` there and open headers until it finds `FILTER=DARK`. On a large library that is slow and can look like a hang.
+**If that resolved root is the same place you store lights, flats, and other FITS** (for example, pattern only varies the file name, not folders), SeeDark still has to enumerate **every** `*.fit*` there and open headers until it finds `FILTER=DARK`. On a large library that is slow and can look like a hang.
 
-**What to do:** point raw DARKs at a dedicated folder tree—either set **Raw darks folder** in SeeDark to a DARK-only path, or configure NINA so DARK saves live under a dedicated branch of **Image File Path** (pattern with `$$IMAGETYPE$$` in the path is the usual approach). Then stacking stays scoped to a small directory.
+**What to do:** configure NINA so DARK saves live under a dedicated branch of **Image File Path**—typically a pattern with `$$IMAGETYPE$$` in the path (e.g. `CALIBRATION\DARKs\...`). Then stacking stays scoped to a smaller tree without any SeeDark-only path override.
 
 ## Stacker and Lifecycle
 
@@ -135,9 +134,9 @@ Advanced/internal controls (not shown in normal UI) include:
 
 If you want to keep pre-plugin masters untouched, use a dedicated `Master library folder` for SeeDark-managed masters.
 
-Treat **raw DARKs** the same way: a dedicated **Raw darks folder** or a NINA layout that puts DARKs under their own subtree avoids full-library scans when you run **Stack Master Darks** (see **Raw DARKs and stacking** above).
+For **raw DARKs**, use a NINA layout that puts DARKs under their own subtree when possible so **Stack Master Darks** does not scan your entire library (see **Raw DARKs and stacking** above).
 
-Auto capture writes DARK raws via NINA's DARK pattern under that resolved root. If save fails, Auto capture aborts immediately.
+Auto capture writes DARK raws via NINA's DARK pattern under the same resolved root. If save fails, Auto capture aborts immediately.
 
 ## Logs
 

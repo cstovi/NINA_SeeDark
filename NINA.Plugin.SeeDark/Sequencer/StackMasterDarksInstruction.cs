@@ -54,7 +54,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             var darkPattern   = _plugin.GetNinaDarkFilePattern();
 
             if (string.IsNullOrWhiteSpace(rawFolder)) {
-                Log("❌ Raw dark scan root could not be resolved (set NINA image file path or Raw darks folder) — aborting");
+                Log("❌ Raw dark scan root could not be resolved (configure NINA Image File Path) — aborting");
                 return;
             }
             if (!Directory.Exists(rawFolder)) {
@@ -68,9 +68,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             bool deleteRawsEnabled = _plugin.Settings.DeleteRawsAfterMaxAge;
 
             Log($"🔭 Scanning {rawFolder}");
-            if (!string.IsNullOrWhiteSpace(_plugin.RawDarksFolder?.Trim()))
-                Log("🔭 Raw darks folder override is active (preferred over NINA image path).");
-            else if (!string.Equals(Path.GetFullPath(rawFolder), Path.GetFullPath(imageFileRoot), StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(Path.GetFullPath(rawFolder), Path.GetFullPath(imageFileRoot), StringComparison.OrdinalIgnoreCase))
                 Log($"🔭 Scan limited to DARK subtree (NINA image file path is {imageFileRoot}).");
             if (!string.IsNullOrWhiteSpace(darkPattern))
                 Log($"🔭 NINA DARK pattern: {darkPattern}");

@@ -4,16 +4,13 @@ using System.IO;
 namespace NINA.Plugin.SeeDark {
 
     /// <summary>
-    /// Resolves the directory used to discover raw DARK FITS (stacker, same-night counts, optional purge).
-    /// Prefer explicit plugin folder when set; otherwise narrow under NINA image path when the DARK pattern
+    /// Resolves the directory used to discover raw DARK FITS (stacker, same-night counts, optional purge)
+    /// from NINA profile image file path, optionally narrowed when the DARK pattern
     /// places <c>$$IMAGETYPE$$</c> in a path segment (e.g. <c>CALIBRATION\$$IMAGETYPE$$s\</c>).
     /// </summary>
     internal static class RawDarkScanRootResolver {
 
-        public static string Resolve(string? rawDarksFolderOverride, string ninaImageFilePath, string? ninaDarkPattern) {
-            if (!string.IsNullOrWhiteSpace(rawDarksFolderOverride))
-                return Path.GetFullPath(rawDarksFolderOverride.Trim());
-
+        public static string Resolve(string ninaImageFilePath, string? ninaDarkPattern) {
             if (string.IsNullOrWhiteSpace(ninaImageFilePath))
                 return "";
 

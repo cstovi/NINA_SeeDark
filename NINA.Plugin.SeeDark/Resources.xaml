@@ -50,18 +50,12 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Master dark library folder:" VerticalAlignment="Center" Margin="0,0,8,4"
                            ToolTip="Where finished master darks are stored. Used by both the gap check and the stacker."/>
                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding MasterLibraryFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"
                          ToolTip="Where finished master darks are stored. Used by both the gap check and the stacker."/>
                 <Button Grid.Row="0" Grid.Column="2" Content="..." Width="28" Margin="8,0,0,4" VerticalAlignment="Center" Click="BrowseMasterLibraryFolder_Click"/>
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Raw darks folder (optional):" VerticalAlignment="Center" Margin="0,0,8,4"
-                           ToolTip="When set, raw DARK FITS are read, saved, and purged here instead of under NINA image path. Leave empty to use NINA path (narrowed to the DARK subtree when your file pattern puts $$IMAGETYPE$$ in a folder)."/>
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding RawDarksFolder, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"
-                         ToolTip="When set, raw DARK FITS are read, saved, and purged here instead of under NINA image path. Leave empty to use NINA path (narrowed to the DARK subtree when your file pattern puts $$IMAGETYPE$$ in a folder)."/>
-                <Button Grid.Row="1" Grid.Column="2" Content="..." Width="28" Margin="8,0,0,4" VerticalAlignment="Center" Click="BrowseRawDarksFolder_Click"/>
             </Grid>
 
             <TextBlock Text="Dark Matching" FontWeight="Bold" Margin="0,16,0,6"/>

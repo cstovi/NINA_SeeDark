@@ -13,8 +13,6 @@ namespace NINA.Plugin.SeeDark {
         public int MaxAgeDays { get; set; } = 180;
         public int Gain { get; set; } = 200;
         public string MasterLibraryFolder { get; set; } = "";
-        /// <summary>Optional root for raw DARK FITS. When set, stacker, same-night raw checks, Auto save, and raw purge use this folder instead of deriving from NINA image path.</summary>
-        public string RawDarksFolder { get; set; } = "";
         public int MinFrameCount { get; set; } = 20;
         public int MaxFrameCount { get; set; } = 50;
         public bool DeleteRawsAfterMaxAge { get; set; } = false;

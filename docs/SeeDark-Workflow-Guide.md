@@ -125,24 +125,19 @@ Below are the main settings and what changing them usually means.
 - What it does: where SeeDark writes and scans master FITS.
 - Implication: this folder is the runtime source of truth for master availability checks.
 
-### Raw darks folder (optional)
+### Raw DARK scan root (NINA paths only)
 
-- What it does: when set, this folder is the root for reading raw DARKs (stacker, same-night counts), saving Auto-captured DARKs, and optional raw purge.
-- When empty: SeeDark uses NINA `Image File Path`, but if your DARK **pattern** puts `$$IMAGETYPE$$` in a **folder** (e.g. `CALIBRATION\$$IMAGETYPE$$s\...`), the scan is limited to that expanded subtree (typically `...\CALIBRATION\DARKs`) when that folder exists; if it does not exist yet, SeeDark falls back to scanning the full NINA image path until the folder appears.
+- What it does: stacker, same-night raw counts, Auto save, and optional raw purge all use a **resolved root** derived only from NINA **Image File Path** and your profile DARK file pattern.
+- Narrowing: if the DARK **pattern** puts `$$IMAGETYPE$$` in a **folder** (e.g. `CALIBRATION\$$IMAGETYPE$$s\...`), SeeDark limits scanning to that expanded subtree (typically `...\CALIBRATION\DARKs`) when that folder exists; if it does not exist yet, SeeDark falls back to scanning the full NINA image path until the folder appears.
 
-**Recommendation — keep DARK raws in a dedicated tree.** The stacker finds DARKs by walking every `*.fit*` under the resolved root and reading FITS headers. If that root is your whole imaging library (lights, flats, masters, etc.), runs can take a long time and look stuck. Prefer either:
-
-- setting **Raw darks folder** to a path used only for DARK raws, or  
-- a NINA DARK pattern that places `$$IMAGETYPE$$` in the **path** so saves land under a DARK-only branch (e.g. `CALIBRATION\DARKs\...`).
-
-If your pattern only customizes the **file name** and everything shares one big **Image File Path**, expect a full-library scan whenever you stack.
+**Recommendation — keep DARK raws in a dedicated branch of Image File Path.** The stacker walks every `*.fit*` under the resolved root and reads FITS headers. If that root is your whole imaging library (lights, flats, masters, etc.), runs can take a long time and look stuck. Prefer a NINA DARK pattern that places `$$IMAGETYPE$$` in the **path** so saves land under a DARK-only branch (e.g. `CALIBRATION\DARKs\...`). If your pattern only customizes the **file name** and everything shares one big **Image File Path**, expect a full-library scan whenever you stack.
 
 ### NINA DARK file pattern (save layout)
 
 - What it does: SeeDark uses NINA's DARK file pattern when saving Auto captures (`SaveToDisk` rules).
-- Source of truth: NINA `Image File Path` (or **Raw darks folder** when set) as `FilePath`, plus the profile DARK pattern from `GetFilePattern("DARK")`.
+- Source of truth: NINA `Image File Path` as `FilePath`, plus the profile DARK pattern from `GetFilePattern("DARK")`.
 - Implication: Auto-captured DARK raws use NINA token-expanded subfolders/filenames under that root.
-- Read side: files are still selected by FITS headers (`FILTER=DARK`, etc.); the pattern does not filter filenames on read, only helps derive the scan root when `$$IMAGETYPE$$` is a path segment and **Raw darks folder** is empty.
+- Read side: files are still selected by FITS headers (`FILTER=DARK`, etc.); the pattern does not filter filenames on read, only helps derive the scan root when `$$IMAGETYPE$$` is a path segment.
 - Failure behavior: if an Auto-captured raw cannot be saved via NINA pattern rules, Auto dark capture aborts immediately (hard-fail).
 
 ### Temp Bucket Size (2C or 3C)
