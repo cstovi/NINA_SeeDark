@@ -1,6 +1,6 @@
 # Runs on every push and on pull_request — not on local saves.
 # To run CI: commit your changes, then push to GitHub.
-# See .cursor/rules/seedark-git.mdc for agent commit/push expectations.
+# See .cursor/rules/gitship.mdc for agent commit/push expectations.
 
 name: Validate Changes
 
