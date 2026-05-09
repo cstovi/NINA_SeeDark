@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.15.3 - 2026-05-09
+
+- README and workflow guide: recommend a dedicated raw-DARK folder or `$$IMAGETYPE$$`-in-path layout so **Stack Master Darks** does not scan the entire NINA image tree when other FITS live there; README stacker/deletion wording aligned with resolved raw-dark root.
+- `CLAUDE.md`: stacker bullet notes the same library-layout guidance for agents.
+
 ## v1.15.2 - 2026-05-09
 
 - Plugin catalog long description and options panel: credit line for early testing feedback.

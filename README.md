@@ -34,7 +34,7 @@ Since SeeDark is not currently in the NINA plugin repository, install it manuall
 
 1. Set plugin options:
    - `Master library folder` (required for runtime matching/capture decisions)
-   - `Raw darks folder` (optional; when empty, SeeDark derives the scan/save root from NINA image path and your DARK file pattern)
+   - `Raw darks folder` (strongly recommended unless your NINA DARK pattern already keeps DARKs in a dedicated subtree—see **Raw DARKs and stacking** below)
 2. Add `SeeDark Dark Manager` to your sequence.
 3. Set container exposure and gain to your intended dark profile.
 4. Run sequence.
@@ -76,11 +76,19 @@ Same-night raw sufficiency guard:
 - To preserve A->B thermal progression on uncooled sensors, Auto may temporarily overshoot bucket A up to 60 raws while warming into a needed bucket B.
 - The intent is to avoid all-night over-capture in stable temperatures, while still allowing useful warmer-bucket seeding.
 
+## Raw DARKs and stacking (important)
+
+The stacker (and same-night raw checks) must discover raw DARK FITS under a **resolved root**: the plugin **Raw darks folder** if set, otherwise NINA **Image File Path**—optionally narrowed to a `DARKs`-style subtree when your DARK **pattern** includes `$$IMAGETYPE$$` in a folder segment.
+
+**If that root is the same place you store lights, flats, and other FITS**, SeeDark still has to enumerate **every** `*.fit*` there and open headers until it finds `FILTER=DARK`. On a large library that is slow and can look like a hang.
+
+**What to do:** point raw DARKs at a dedicated folder tree—either set **Raw darks folder** in SeeDark to a DARK-only path, or configure NINA so DARK saves live under a dedicated branch of **Image File Path** (pattern with `$$IMAGETYPE$$` in the path is the usual approach). Then stacking stays scoped to a small directory.
+
 ## Stacker and Lifecycle
 
 `SeeDark Stack Master Darks`:
 
-- scans NINA's image save root recursively for dark FITS (using NINA `Image File Path` and DARK pattern rules for where DARKs are written),
+- scans the resolved raw-dark root recursively for FITS, keeps frames whose headers identify them as DARKs,
 - groups by `(temp bucket, exposure, gain, scope ID)`,
 - uses most recent valid frames within age rules,
 - rebuilds masters when:
@@ -102,7 +110,7 @@ Operational guidance:
 Lifecycle controls are opt-in:
 
 - `Delete old raw darks`
-  - deletes DARK raws older than `MaxAgeDays` in the active NINA save location.
+  - deletes DARK raws older than `MaxAgeDays` under the same resolved raw-dark root as the stacker.
   - disabled by default; irreversible when enabled.
 
 ## Current Settings Snapshot
@@ -127,7 +135,9 @@ Advanced/internal controls (not shown in normal UI) include:
 
 If you want to keep pre-plugin masters untouched, use a dedicated `Master library folder` for SeeDark-managed masters.
 
-The stacker and Auto same-night sufficiency checks read raws from NINA's image save root. SeeDark Auto dark capture writes DARK raws using NINA's own DARK pattern resolution (`Image File Path` + DARK override pattern if set), including date/type folders. If save fails, Auto capture aborts immediately.
+Treat **raw DARKs** the same way: a dedicated **Raw darks folder** or a NINA layout that puts DARKs under their own subtree avoids full-library scans when you run **Stack Master Darks** (see **Raw DARKs and stacking** above).
+
+Auto capture writes DARK raws via NINA's DARK pattern under that resolved root. If save fails, Auto capture aborts immediately.
 
 ## Logs
 

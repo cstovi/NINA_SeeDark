@@ -70,7 +70,7 @@ Any meaningful project change must include updates to related user-facing text/d
 
 ## Dark Stacker (`StackMasterDarksInstruction.cs`)
 
-1. Scans the resolved raw-dark root recursively for `*.fit*` with `FILTER=DARK`: `RawDarksFolder` when set; otherwise, when the NINA DARK pattern includes `$$IMAGETYPE$$` in a folder segment, under `ImageFileSettings.FilePath` through that expanded segment (e.g. `...\CALIBRATION\DARKs`); otherwise the full NINA image save root
+1. Scans the resolved raw-dark root recursively for `*.fit*` with `FILTER=DARK`: `RawDarksFolder` when set; otherwise, when the NINA DARK pattern includes `$$IMAGETYPE$$` in a folder segment, under `ImageFileSettings.FilePath` through that expanded segment (e.g. `...\CALIBRATION\DARKs`); otherwise the full NINA image save root (document for users: keep DARK raws in a dedicated folder or IMAGETYPE path branch so large mixed libraries are not fully enumerated)
 2. Header fallbacks: `DATE-LOC`→`DATE-OBS`, `EXPTIME`→`EXPOSURE`, `CCD-TEMP`→`SET-TEMP`
 3. Session date rebasing: if `hour < 12`, subtract one day (sessions span midnight)
 4. Groups by `(tempBucket, exposure, gain, scopeId)` and uses the most recent valid frames (strict age window by FITS date)
