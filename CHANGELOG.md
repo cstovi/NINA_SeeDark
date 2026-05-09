@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.16.1 - 2026-05-09
+
+- Plugin options UI: remove duplicate Ettaswell-Jon credit line (credit remains in catalog `LongDescription` only).
+
 ## v1.16.0 - 2026-05-09
 
 - Removed the plugin **Raw darks folder** option (it was added in v1.15.0). Raw DARK discovery, Auto save, same-night counts, and optional raw purge use **only** NINA **Image File Path** and the profile DARK pattern, with the same `$$IMAGETYPE$$` path narrowing as before. Updated docs accordingly.

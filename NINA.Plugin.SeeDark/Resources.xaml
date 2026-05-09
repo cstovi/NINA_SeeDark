@@ -160,10 +160,6 @@
                 <TextBlock Grid.Row="2" Grid.Column="2" Text="Optional" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
             </Grid>
 
-            <TextBlock Margin="0,20,0,0"
-                       Text="Credit to @Ettaswell-Jon for single handedly exposing all the bugs in early versions!"
-                       Foreground="#888" FontSize="11" TextWrapping="Wrap"/>
-
         </StackPanel>
     </DataTemplate>
 
