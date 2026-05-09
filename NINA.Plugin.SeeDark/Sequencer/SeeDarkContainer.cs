@@ -563,6 +563,13 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         private async Task SaveRawDarkAsync(IExposureData? exposureData, CancellationToken token) {
             if (exposureData == null) return;
             try {
+                // SaveToDisk expects the same base as NINA Options: full Image File Path. The DARK pattern
+                // already includes segments such as CALIBRATION\$$IMAGETYPE$$s\ — using the narrowed raw
+                // root here would duplicate those folders.
+                var imageFileRoot = _plugin.GetNinaImageFileRoot();
+                if (string.IsNullOrWhiteSpace(imageFileRoot)) {
+                    throw new InvalidOperationException("NINA image file path is not configured.");
+                }
                 var rawDarksFolder = _plugin.GetNinaDarkRawRootFolder();
                 if (string.IsNullOrWhiteSpace(rawDarksFolder)) {
                     throw new InvalidOperationException("NINA image file path is not configured.");
@@ -579,7 +586,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     throw new InvalidOperationException("NINA DARK file pattern could not be resolved.");
                 }
                 var fileSaveInfo = new FileSaveInfo(_plugin.ProfileService) {
-                    FilePath = rawDarksFolder,
+                    FilePath = imageFileRoot,
                     FilePattern = darkPattern,
                     FileType = NINA.Core.Enum.FileTypeEnum.FITS,
                 };

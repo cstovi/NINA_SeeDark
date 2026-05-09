@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.16.2 - 2026-05-09
+
+- Auto dark save: use NINA **Image File Path** as `FileSaveInfo.FilePath` (not the narrowed `CALIBRATION\DARKs` scan root). Passing the narrowed root together with a DARK pattern that already starts with `CALIBRATION\$$IMAGETYPE$$s\` caused `SaveToDisk` to nest `CALIBRATION\DARKs` twice.
+
 ## v1.16.1 - 2026-05-09
 
 - Plugin options UI: remove duplicate Ettaswell-Jon credit line (credit remains in catalog `LongDescription` only).

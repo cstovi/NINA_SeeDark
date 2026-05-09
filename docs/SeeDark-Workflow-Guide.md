@@ -135,7 +135,7 @@ Below are the main settings and what changing them usually means.
 ### NINA DARK file pattern (save layout)
 
 - What it does: SeeDark uses NINA's DARK file pattern when saving Auto captures (`SaveToDisk` rules).
-- Source of truth: NINA `Image File Path` as `FilePath`, plus the profile DARK pattern from `GetFilePattern("DARK")`.
+- Source of truth: NINA **Image File Path** (full profile root) as `FilePath`, plus the profile DARK pattern from `GetFilePattern("DARK")`. The pattern must supply any `CALIBRATION\…\DARKs` segments; the plugin does not prepend them (that would duplicate folders when the pattern already includes them).
 - Implication: Auto-captured DARK raws use NINA token-expanded subfolders/filenames under that root.
 - Read side: files are still selected by FITS headers (`FILTER=DARK`, etc.); the pattern does not filter filenames on read, only helps derive the scan root when `$$IMAGETYPE$$` is a path segment.
 - Failure behavior: if an Auto-captured raw cannot be saved via NINA pattern rules, Auto dark capture aborts immediately (hard-fail).
