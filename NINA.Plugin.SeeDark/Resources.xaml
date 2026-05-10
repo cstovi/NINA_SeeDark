@@ -130,9 +130,9 @@
             <TextBlock Text="Dark Stacker" FontWeight="Bold" Margin="0,16,0,6"/>
             <DockPanel Margin="0,4,0,4" LastChildFill="False">
                 <TextBlock DockPanel.Dock="Left" Text="Additional NINA masters:" Width="180" VerticalAlignment="Center" Margin="0,0,8,0"
-                           ToolTip="Also write a NINA-format master (16-bit + BZERO) e.g. for Livestack. SIRIL/PixInsight float32 master is always written."/>
+                           ToolTip="Also write a NINA-format master (16-bit + BZERO) for NINA plugins such as Livestack. A float32 (F32) master is always written for general use."/>
                 <CheckBox DockPanel.Dock="Left" IsChecked="{Binding WriteNinaLiveMasters, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
-                          ToolTip="Also write a NINA-format master (16-bit + BZERO) e.g. for Livestack. SIRIL/PixInsight float32 master is always written."/>
+                          ToolTip="Also write a NINA-format master (16-bit + BZERO) for NINA plugins such as Livestack. A float32 (F32) master is always written for general use."/>
             </DockPanel>
 
             <TextBlock Text="Notifications" FontWeight="Bold" Margin="0,16,0,6"/>

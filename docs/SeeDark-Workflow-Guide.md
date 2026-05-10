@@ -160,8 +160,8 @@ Below are the main settings and what changing them usually means.
 
 ### WriteNinaLiveMasters
 
-- What it does: writes additional NINA-format masters alongside SIRIL/PixInsight float masters.
-- Implication: useful for NINA-specific consumers; adds extra output files.
+- What it does: writes additional NINA-format masters (16-bit + BZERO) alongside the always-written float32 (F32) master.
+- Implication: enable when a NINA plugin expects camera-like signed 16-bit FITS (for example **Livestack**); adds extra output files.
 
 ### DiscordWebhookUrl / DiscordVerbosePerFrame
 

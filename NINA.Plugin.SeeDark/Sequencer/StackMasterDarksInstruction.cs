@@ -223,9 +223,9 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     ["STACKCNT"] = (long)pixelArrays.Count,
                 };
 
-                var sirilPath = Path.Combine(masterFolder, $"{prefix}SIRIL_{ts}.fit");
-                WriteFitsFloat(sirilPath, median, width, height, extraHeaders);
-                Log($"💾 Written SIRIL: {sirilPath}");
+                var float32Path = Path.Combine(masterFolder, $"{prefix}F32_{ts}.fit");
+                WriteFitsFloat(float32Path, median, width, height, extraHeaders);
+                Log($"💾 Written float32 master (F32): {float32Path}");
                 if (_plugin.Settings.WriteNinaLiveMasters) {
                     var ninalivePath = Path.Combine(masterFolder, $"{prefix}NINALIVE_{ts}.fit");
                     WriteFitsUInt16(ninalivePath, median, width, height, extraHeaders);

@@ -20,7 +20,7 @@ namespace NINA.Plugin.SeeDark {
         private bool LegacyDeleteArchivedRawsAfterMaxAge {
             set => DeleteRawsAfterMaxAge = value;
         }
-        /// <summary>When true, the stacker also writes a NINA-format master (BITPIX=16, BZERO=32768) alongside the always-present SIRIL/PixInsight float32 master.</summary>
+        /// <summary>When true, the stacker also writes a NINA-format master (BITPIX=16, BZERO=32768) alongside the always-present float32 (F32) master.</summary>
         public bool WriteNinaLiveMasters { get; set; } = false;
         public string DiscordWebhookUrl { get; set; } = "";
         /// <summary>Optional label prepended to every Discord notification, e.g. "Backyard rig".</summary>

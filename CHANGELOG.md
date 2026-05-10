@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.17.0 - 2026-05-10
+
+- Stack Master Darks: default stacked master filename token renamed from `SIRIL` to `F32` (still BITPIX=-32 float); optional `NINALIVE` output unchanged. Update any scripts or habits that matched `*_SIRIL_*.fit`.
+- Documentation and options UI: describe the float32 master as format-neutral; optional NINA masters explicitly explained for NINA plugins such as Livestack.
+
 ## v1.16.2 - 2026-05-09
 
 - Auto dark save: use NINA **Image File Path** as `FileSaveInfo.FilePath` (not the narrowed `CALIBRATION\DARKs` scan root). Passing the narrowed root together with a DARK pattern that already starts with `CALIBRATION\$$IMAGETYPE$$s\` caused `SaveToDisk` to nest `CALIBRATION\DARKs` twice.

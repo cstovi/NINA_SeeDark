@@ -94,7 +94,7 @@ The stacker (and same-night raw checks) discover raw DARK FITS under NINA **Imag
   - missing,
   - expired, or
   - fresh but `STACKCNT` is present and more eligible raws now exist than were previously stacked,
-- writes SIRIL/PixInsight float32 masters (and optional NINA live masters).
+- writes float32 (F32) FITS masters (BITPIX=-32) for general post-processing, and optionally NINA-format (16-bit + BZERO) masters for NINA plugins such as Livestack.
 
 Contributor metadata notes:
 

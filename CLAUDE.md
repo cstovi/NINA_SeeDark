@@ -75,7 +75,7 @@ Any meaningful project change must include updates to related user-facing text/d
 3. Session date rebasing: if `hour < 12`, subtract one day (sessions span midnight)
 4. Groups by `(tempBucket, exposure, gain, scopeId)` and uses the most recent valid frames (strict age window by FITS date)
 5. Rebuilds a master when missing or expired (`MaxAgeDays`); additionally, for fresh masters with readable `STACKCNT`, rebuilds when current eligible raw count exceeds that `STACKCNT` (legacy masters without `STACKCNT` remain skip-safe)
-6. Per-pixel median stack → SIRIL master (BITPIX=-32, float32) + NINALIVE master (BITPIX=16, BZERO=32768)
+6. Per-pixel median stack → F32 master (BITPIX=-32, float32) + optional NINALIVE master (BITPIX=16, BZERO=32768)
 7. Deletes superseded masters for the same group key before writing
 8. If raw cleanup is enabled, DARK raws older than `MaxAgeDays` are deleted in place from the raw-dark scan root
 10. Master discovery remains header-driven by scanning `MasterLibraryFolder` FITS files (no CSV index dependency)
@@ -83,7 +83,7 @@ Any meaningful project change must include updates to related user-facing text/d
 
 FITS I/O is inline — no NuGet. Uses `System.Buffers.Binary.BinaryPrimitives` for big-endian reads/writes. Headers are 80-char fixed-width cards in 2880-byte blocks.
 
-Master filename: `master_dark_{exp:F0}s_{bucket}c_{scopeId}_g{gain}_{SIRIL|NINALIVE}_{yyyyMMddHHmmss}.fit`
+Master filename: `master_dark_{exp:F0}s_{bucket}c_{scopeId}_g{gain}_{F32|NINALIVE}_{yyyyMMddHHmmss}.fit`
 
 ## Settings
 
@@ -99,7 +99,7 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `MaxFrameCount` | int | 50 | Internal fixed maximum frames stacked per group (most recent frames, hidden in UI) |
 | `DefaultExecutionMode` | int | 1 | Default for new containers (`1=Auto`, `0=Manual`); no UI — reserved for future advanced mode |
 | `DeleteRawsAfterMaxAge` | bool | false | Opt-in: delete DARK raws older than `MaxAgeDays` from the raw-dark scan root |
-| `WriteNinaLiveMasters` | bool | false | Opt-in: also write a NINA-format master (BITPIX=16, BZERO=32768) alongside the always-present SIRIL/PixInsight float32 master |
+| `WriteNinaLiveMasters` | bool | false | Opt-in: also write a NINA-format master (BITPIX=16, BZERO=32768; e.g. NINA Livestack) alongside the always-present float32 (F32) master |
 | `AutoDarkMaxWarmerBucketSteps` | int | 0 | Auto capture may follow rising temp into up to N warmer bands (vs. run-start anchor) when no master exists there; 0 = stay in starting band only |
 | `TempBucketSize` | int | 2 | User-selectable: 2 or 3 in simple mode |
 | `StackTolerance` | int | 2 | Internal/derived from bucket size (not shown in UI) |
