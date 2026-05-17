@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.18.0 - 2026-05-18
+
+- Auto dark capture: set `FilterType` on each `CaptureSequence` so NINA exposure logs show the DARK filter name (matches filter wheel after `ChangeFilter`).
+
+## [Unreleased]
+
 ## v1.17.0 - 2026-05-10
 
 - Stack Master Darks: default stacked master filename token renamed from `SIRIL` to `F32` (still BITPIX=-32 float); optional `NINALIVE` output unchanged. Update any scripts or habits that matched `*_SIRIL_*.fit`.

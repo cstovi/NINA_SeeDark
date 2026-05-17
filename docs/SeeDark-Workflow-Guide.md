@@ -158,10 +158,24 @@ Below are the main settings and what changing them usually means.
 - Default: off.
 - Implication: saves storage, but is irreversible for removed raws.
 
-### WriteNinaLiveMasters
+### Master output formats (F32 vs NINA)
 
-- What it does: writes additional NINA-format masters (16-bit + BZERO) alongside the always-written float32 (F32) master.
-- Implication: enable when a NINA plugin expects camera-like signed 16-bit FITS (for example **Livestack**); adds extra output files.
+**Stack Master Darks** always produces a **default F32 master** for each group it rebuilds:
+
+| | **F32 (default, always)** | **NINALIVE (optional)** |
+|---|---|---|
+| **Filename** | `…_F32_<timestamp>.fit` | `…_NINALIVE_<timestamp>.fit` |
+| **Pixels** | 32-bit float (`BITPIX=-32`) | 16-bit with `BZERO=32768` (`BITPIX=16`) |
+| **Purpose** | General calibration / external tools (Siril, PixInsight, etc.) | NINA plugins that expect camera-like signed 16-bit FITS (e.g. **Livestack**) |
+| **When written** | Every successful stack | Only if **Additional NINA masters** is enabled |
+
+Both files are the same median stack; NINALIVE is a quantized, NINA-friendly encoding of that data—not a different stack. Headers (`EXPTIME`, `CCD-TEMP`, `GAIN`, `INSTRUME`, `STACKCNT`, etc.) are the same on both. SeeDark’s gap check and stacker matching read headers, not the `F32` vs `NINALIVE` token in the filename.
+
+### WriteNinaLiveMasters (**Additional NINA masters**)
+
+- What it does: turns on the optional **NINALIVE** file above; F32 is still always written.
+- Default: off.
+- Implication: enable only if you use a NINA workflow that needs 16-bit+BZERO masters; you will have twice as many master files per rebuild when on.
 
 ### DiscordWebhookUrl / DiscordVerbosePerFrame
 

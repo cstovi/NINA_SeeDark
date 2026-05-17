@@ -94,7 +94,15 @@ The stacker (and same-night raw checks) discover raw DARK FITS under NINA **Imag
   - missing,
   - expired, or
   - fresh but `STACKCNT` is present and more eligible raws now exist than were previously stacked,
-- writes float32 (F32) FITS masters (BITPIX=-32) for general post-processing, and optionally NINA-format (16-bit + BZERO) masters for NINA plugins such as Livestack.
+- always writes one **float32 (F32)** master per group; optionally also a **NINA-format (NINALIVE)** master when enabled in plugin options (see below).
+
+### Master output formats (F32 vs NINA)
+
+Every successful stack writes a **default F32 master** (`…_F32_<timestamp>.fit`). That is the normal output: 32-bit float pixels (`BITPIX=-32`), full precision from the median stack, suitable for Siril, PixInsight, and other general calibration workflows.
+
+The optional **NINA master** (`…_NINALIVE_<timestamp>.fit`) is the same stacked data encoded like a camera frame: unsigned 16-bit storage with `BITPIX=16`, `BZERO=32768`, and `BSCALE=1` so NINA plugins that expect signed 16-bit FITS (for example **Livestack**) can load it. Enable it with **Additional NINA masters** in plugin settings (`WriteNinaLiveMasters`; off by default). When enabled, you get **both** files for each rebuild—not a replacement for F32.
+
+Runtime dark matching (gap check and stacker rebuild logic) uses FITS headers (`IMAGETYP`, `CCD-TEMP`, `EXPTIME`, `GAIN`, `INSTRUME`, age, `STACKCNT`); either filename suffix works if headers match. Superseded masters for a group are removed together before a new pair is written.
 
 Contributor metadata notes:
 

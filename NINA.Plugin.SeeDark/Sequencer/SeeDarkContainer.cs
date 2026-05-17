@@ -191,6 +191,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     Gain = Gain,
                     Offset = -1,
                     ImageType = CaptureSequence.ImageTypes.DARK,
+                    FilterType = darkFilter,
                 };
 
                 ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames, "capturing");

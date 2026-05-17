@@ -5,3 +5,4 @@ obj/
 tools/
 tools/dark_temp_analysis_*.txt
 .claude/settings.local.json
+.codex-jobs/
