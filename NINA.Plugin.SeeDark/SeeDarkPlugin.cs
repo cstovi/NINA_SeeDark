@@ -61,6 +61,7 @@ namespace NINA.Plugin.SeeDark {
             DeleteRawsAfterMaxAge = Settings.DeleteRawsAfterMaxAge;
             WriteNinaLiveMasters  = Settings.WriteNinaLiveMasters;
             DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
+            DiscordGeneralWebhookUrl = Settings.DiscordGeneralWebhookUrl;
             DiscordScopeName      = Settings.DiscordScopeName;
             DiscordVerbosePerFrame = Settings.DiscordVerbosePerFrame;
             TempBucketSize        = Settings.TempBucketSize;
@@ -110,6 +111,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.DeleteRawsAfterMaxAge = _deleteRawsAfterMaxAge;
                 Settings.WriteNinaLiveMasters = _writeNinaLiveMasters;
                 Settings.DiscordWebhookUrl   = _discordWebhookUrl;
+                Settings.DiscordGeneralWebhookUrl = _discordGeneralWebhookUrl;
                 Settings.DiscordScopeName    = _discordScopeName;
                 Settings.DiscordVerbosePerFrame = _discordVerbosePerFrame;
                 Settings.TempBucketSize      = _tempBucketSize;
@@ -165,6 +167,7 @@ namespace NINA.Plugin.SeeDark {
                 Settings.DeleteRawsAfterMaxAge = latest.DeleteRawsAfterMaxAge;
                 Settings.WriteNinaLiveMasters = latest.WriteNinaLiveMasters;
                 Settings.DiscordWebhookUrl = latest.DiscordWebhookUrl;
+                Settings.DiscordGeneralWebhookUrl = latest.DiscordGeneralWebhookUrl;
                 Settings.DiscordScopeName = latest.DiscordScopeName;
                 Settings.DiscordVerbosePerFrame = latest.DiscordVerbosePerFrame;
                 Settings.TempBucketSize = latest.TempBucketSize;
@@ -182,6 +185,7 @@ namespace NINA.Plugin.SeeDark {
                 _deleteRawsAfterMaxAge = latest.DeleteRawsAfterMaxAge;
                 _writeNinaLiveMasters = latest.WriteNinaLiveMasters;
                 _discordWebhookUrl = latest.DiscordWebhookUrl;
+                _discordGeneralWebhookUrl = latest.DiscordGeneralWebhookUrl;
                 _discordScopeName = latest.DiscordScopeName;
                 _discordVerbosePerFrame = latest.DiscordVerbosePerFrame;
                 _tempBucketSize = latest.TempBucketSize;
@@ -193,6 +197,20 @@ namespace NINA.Plugin.SeeDark {
 
         public async Task SendDiscordAsync(string msg) {
             var url = DiscordWebhookUrl;
+            if (string.IsNullOrWhiteSpace(url)) return;
+            var name = DiscordScopeName?.Trim();
+            var payload = string.IsNullOrEmpty(name) ? msg : $"{name} - {msg}";
+            try {
+                using var http = new HttpClient();
+                await http.PostAsync(url,
+                    new StringContent(
+                        $"{{\"content\":{JsonConvert.ToString(payload)}}}",
+                        Encoding.UTF8, "application/json"));
+            } catch { }
+        }
+
+        public async Task SendDiscordGeneralAsync(string msg) {
+            var url = DiscordGeneralWebhookUrl;
             if (string.IsNullOrWhiteSpace(url)) return;
             var name = DiscordScopeName?.Trim();
             var payload = string.IsNullOrEmpty(name) ? msg : $"{name} - {msg}";
@@ -316,6 +334,12 @@ namespace NINA.Plugin.SeeDark {
         public string DiscordWebhookUrl {
             get => _discordWebhookUrl;
             set { _discordWebhookUrl = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
+        }
+
+        private string _discordGeneralWebhookUrl = "";
+        public string DiscordGeneralWebhookUrl {
+            get => _discordGeneralWebhookUrl;
+            set { _discordGeneralWebhookUrl = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private string _discordScopeName = "";

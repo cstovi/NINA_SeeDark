@@ -87,10 +87,14 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             _plugin.RefreshRuntimeSettingsFromDisk();
             if (!NeedsDarks()) return;
             if (ExecutionMode == DarkExecutionMode.Auto) {
+                await _plugin.SendDiscordGeneralAsync("SeeDark has started — auto dark capture in progress.");
                 await ExecuteAutoCapture(progress, token);
+                await _plugin.SendDiscordGeneralAsync("SeeDark auto dark capture has stopped.");
                 return;
             }
+            await _plugin.SendDiscordGeneralAsync("SeeDark has started — manual execution in progress.");
             await base.Execute(progress, token);
+            await _plugin.SendDiscordGeneralAsync("SeeDark manual execution has stopped.");
         }
 
         private async Task ExecuteAutoCapture(IProgress<ApplicationStatus> progress, CancellationToken token) {

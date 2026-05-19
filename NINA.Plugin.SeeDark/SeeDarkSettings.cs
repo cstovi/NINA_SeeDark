@@ -23,6 +23,8 @@ namespace NINA.Plugin.SeeDark {
         /// <summary>When true, the stacker also writes a NINA-format master (BITPIX=16, BZERO=32768) alongside the always-present float32 (F32) master.</summary>
         public bool WriteNinaLiveMasters { get; set; } = false;
         public string DiscordWebhookUrl { get; set; } = "";
+        /// <summary>Optional webhook for minimal operational notifications (start/stop), separate from the verbose detail webhook.</summary>
+        public string DiscordGeneralWebhookUrl { get; set; } = "";
         /// <summary>Optional label prepended to every Discord notification, e.g. "Backyard rig".</summary>
         public string DiscordScopeName { get; set; } = "";
         /// <summary>When true, per-frame auto dark capture log lines are mirrored to Discord (noisy).</summary>
