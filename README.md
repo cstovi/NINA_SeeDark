@@ -155,3 +155,7 @@ Auto capture writes DARK raws via NINA's DARK pattern under the same resolved ro
 
 - GitHub Releases: <https://github.com/cstovi/NINA_SeeDark/releases>
 - Changelog: `CHANGELOG.md`
+
+## Support
+
+If you use and like anything I've done, support on [Ko-fi](https://ko-fi.com/turnpike47298) is appreciated to encourage me to keep going!
