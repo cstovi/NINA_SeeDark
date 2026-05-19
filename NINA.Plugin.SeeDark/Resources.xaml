@@ -149,9 +149,11 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Discord webhook URL:" VerticalAlignment="Center" Margin="0,0,8,4"/>
-                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding DiscordWebhookUrl, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="General notifications:" VerticalAlignment="Center" Margin="0,4,8,4"
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Discord webhook (Detail):" VerticalAlignment="Center" Margin="0,0,8,4"
+                           ToolTip="Full verbose dark capture detail. Best used in a dedicated channel."/>
+                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding DiscordWebhookUrl, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,0,0,4"
+                         ToolTip="Full verbose dark capture detail. Best used in a dedicated channel."/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Discord webhook (General):" VerticalAlignment="Center" Margin="0,4,8,4"
                            ToolTip="Minimal operational notifications, separate from the more verbose detail sent to the other webhook."/>
                 <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding DiscordGeneralWebhookUrl, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,4"
                          ToolTip="Minimal operational notifications, separate from the more verbose detail sent to the other webhook."/>
