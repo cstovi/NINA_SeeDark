@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file.
 
 - Auto dark capture: set `FilterType` on each `CaptureSequence` so NINA exposure logs show the DARK filter name (matches filter wheel after `ChangeFilter`).
 
+## v1.21.0 - 2026-05-20
+
+- Stack Master Darks: fixed unnecessary rebuilds when eligible raw count exceeded the stack cap (`MaxFrameCount`). The rebuild trigger now compares the would-be new stack size against the previous master's `STACKCNT`, so masters only rebuild when the actual stacked frame count would increase.
+
 ## [Unreleased]
 
 ## v1.17.0 - 2026-05-10

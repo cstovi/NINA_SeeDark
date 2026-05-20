@@ -120,7 +120,8 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 string sourceText = "active";
                 bool hasFreshMaster = matchingMaster != null && matchingMaster.DateCreated >= masterCutoff;
                 bool hasKnownContributorCount = matchingMaster?.StackCount is > 0;
-                bool shouldRebuildForMoreRaws = hasFreshMaster && hasKnownContributorCount && eligibleCount > matchingMaster!.StackCount!.Value;
+                int newStackCount = Math.Min(eligibleCount, maxFrameCount);
+                bool shouldRebuildForMoreRaws = hasFreshMaster && hasKnownContributorCount && newStackCount > matchingMaster!.StackCount!.Value;
                 if (hasFreshMaster && !shouldRebuildForMoreRaws) {
                     if (!hasKnownContributorCount) {
                         Log($"✅ Existing master is fresh for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} ({matchingMaster!.DateCreated:yyyy-MM-dd}) but STACKCNT is missing/invalid — skipping rebuild (legacy-safe)");
