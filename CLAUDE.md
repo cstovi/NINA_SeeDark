@@ -58,16 +58,6 @@ Any meaningful project change must include updates to related user-facing text/d
   - Manual mode = user-controlled children (hidden from UI for now; see Next Planned Work)
   - Auto mode = container-owned internal dark capture
 
-## Next Planned Work (Temporary)
-
-> Remove or update these items once implemented.
-
-- [ ] Re-expose **Manual** execution mode (and plugin default for new containers) as an **advanced** option; keep `DarkExecutionMode`, `ShowManualChildren`, and manual execution path until then.
-- [ ] Decide whether to expose minimal Auto capture count controls, or keep internal fixed 20/30/50 behavior.
-- [ ] Add optional filter-specific exposure/gain overrides (`IR`, `LP`) behind a default-off toggle; fall back to global defaults when unset.
-- [ ] Consider re-introducing pre-range lead as an advanced-only option if real-world testing justifies it.
-- [ ] Consider exposing stack min/max frame counts as advanced-only options if real-world testing justifies it.
-
 ## Dark Stacker (`StackMasterDarksInstruction.cs`)
 
 1. Scans the resolved raw-dark root recursively for `*.fit*` with `FILTER=DARK`: when the NINA DARK pattern includes `$$IMAGETYPE$$` in a folder segment, under `ImageFileSettings.FilePath` through that expanded segment (e.g. `...\CALIBRATION\DARKs`); otherwise the full NINA image save root (document for users: prefer NINA patterns that put DARKs under a dedicated subtree so large mixed libraries are not fully enumerated)
