@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Newtonsoft.Json;
+using NINA.Core.Utility;
 
 namespace NINA.Plugin.SeeDark {
 
@@ -44,13 +45,13 @@ namespace NINA.Plugin.SeeDark {
                 s = File.Exists(SettingsPath)
                     ? JsonConvert.DeserializeObject<SeeDarkSettings>(File.ReadAllText(SettingsPath)) ?? new SeeDarkSettings()
                     : new SeeDarkSettings();
-            } catch { s = new SeeDarkSettings(); }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] Settings load failed: {ex.Message}"); s = new SeeDarkSettings(); }
 
             if (string.IsNullOrEmpty(s.MasterLibraryFolder)) s.MasterLibraryFolder = Path.Combine(ninaImagePath, "MASTERs");
 
             try {
                 Directory.CreateDirectory(DataFolder);
-            } catch { }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] Settings directory create failed: {ex.Message}"); }
 
             return s;
         }
@@ -59,7 +60,7 @@ namespace NINA.Plugin.SeeDark {
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
                 File.WriteAllText(SettingsPath, JsonConvert.SerializeObject(this, Formatting.Indented));
-            } catch { }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] Settings save failed: {ex.Message}"); }
         }
     }
 }

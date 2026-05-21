@@ -14,6 +14,7 @@ using NINA.Plugin;
 using NINA.Plugin.Interfaces;
 using NINA.Profile.Interfaces;
 using NINA.WPF.Base.Interfaces.Mediator;
+using NINA.Core.Utility;
 using NINA.Plugin.SeeDark.Sequencer;
 
 namespace NINA.Plugin.SeeDark {
@@ -192,7 +193,7 @@ namespace NINA.Plugin.SeeDark {
                 _stackTolerance = latest.StackTolerance;
                 _preBucketLeadC = latest.PreBucketLeadC;
                 _autoDarkMaxWarmerBucketSteps = latest.AutoDarkMaxWarmerBucketSteps;
-            } catch { }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] RefreshRuntimeSettingsFromDisk failed: {ex.Message}"); }
         }
 
         public async Task SendDiscordAsync(string msg) {
@@ -206,7 +207,7 @@ namespace NINA.Plugin.SeeDark {
                     new StringContent(
                         $"{{\"content\":{JsonConvert.ToString(payload)}}}",
                         Encoding.UTF8, "application/json"));
-            } catch { }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] Discord send failed: {ex.Message}"); }
         }
 
         public async Task SendDiscordGeneralAsync(string msg) {
@@ -220,7 +221,7 @@ namespace NINA.Plugin.SeeDark {
                     new StringContent(
                         $"{{\"content\":{JsonConvert.ToString(payload)}}}",
                         Encoding.UTF8, "application/json"));
-            } catch { }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] Discord general send failed: {ex.Message}"); }
         }
 
         // Returns the scope ID token from the camera driver name (second whitespace token).
@@ -232,7 +233,7 @@ namespace NINA.Plugin.SeeDark {
                 if (info == null || !info.Connected) return "";
                 var parts = info.Name.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
                 return parts.Length >= 2 ? parts[1] : info.Name;
-            } catch { return ""; }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] GetScopeId failed: {ex.Message}"); return ""; }
         }
 
         public FilterInfo? GetDarkFilter() {
@@ -242,27 +243,21 @@ namespace NINA.Plugin.SeeDark {
                 var exact = filters.FirstOrDefault(f => string.Equals(f.Name, "DARK", StringComparison.OrdinalIgnoreCase));
                 if (exact != null) return exact;
                 return filters.FirstOrDefault(f => f.Name != null && f.Name.IndexOf("DARK", StringComparison.OrdinalIgnoreCase) >= 0);
-            } catch {
-                return null;
-            }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] GetDarkFilter failed: {ex.Message}"); return null; }
         }
 
         /// <summary>NINA profile image file path only (no IMAGETYPE narrowing).</summary>
         public string GetNinaImageFileRoot() {
             try {
                 return ProfileService.ActiveProfile?.ImageFileSettings?.FilePath?.Trim() ?? "";
-            } catch {
-                return "";
-            }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] GetNinaImageFileRoot failed: {ex.Message}"); return ""; }
         }
 
         /// <summary>Root folder for raw DARK discovery and Auto save: NINA image path, narrowed through the first <c>$$IMAGETYPE$$</c> path segment in the DARK file pattern when possible.</summary>
         public string GetNinaDarkRawRootFolder() {
             try {
                 return RawDarkScanRootResolver.Resolve(GetNinaImageFileRoot(), GetNinaDarkFilePattern());
-            } catch {
-                return "";
-            }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] GetNinaDarkRawRootFolder failed: {ex.Message}"); return ""; }
         }
 
         public string GetNinaDarkFilePattern() {
@@ -271,9 +266,7 @@ namespace NINA.Plugin.SeeDark {
                 if (imageSettings == null)
                     return "";
                 return imageSettings.GetFilePattern("DARK")?.Trim() ?? "";
-            } catch {
-                return "";
-            }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] GetNinaDarkFilePattern failed: {ex.Message}"); return ""; }
         }
 
         private double _targetExposure = 20.0;

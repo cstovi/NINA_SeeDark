@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using NINA.Core.Model;
+using NINA.Core.Utility;
 using NINA.Sequencer.SequenceItem;
 
 namespace NINA.Plugin.SeeDark.Sequencer {
@@ -314,7 +315,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
                     if (newest == null || created > newest.DateCreated)
                         newest = new MasterInfo(path, created, stackCount);
-                } catch { }
+                } catch (Exception ex) { Logger.Warning($"[SeeDark] FindNewestMaster header parse failed: {ex.Message}"); }
             }
             return newest;
         }
@@ -353,7 +354,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 int    gain     = int.TryParse(gainStr, out var g) ? g : 0;
 
                 return new FrameInfo(path, filter?.Trim() ?? "", date, exposure, bucket, gain, scopeId);
-            } catch { return null; }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] ReadFrameInfo failed for {Path.GetFileName(path)}: {ex.Message}"); return null; }
         }
 
         private static float[]? LoadPixels(string path, out int width, out int height) {
@@ -390,7 +391,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     return null;
                 }
                 return pixels;
-            } catch { return null; }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] LoadPixels failed for {Path.GetFileName(path)}: {ex.Message}"); return null; }
         }
 
         private static float[] ComputeMedian(List<float[]> arrays) {
@@ -556,7 +557,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
                 File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {timestampedMessage}{Environment.NewLine}");
-            } catch { }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] Stacker log write failed: {ex.Message}"); }
             if (ShouldSendToDiscord(msg))
                 _ = _plugin.SendDiscordAsync(timestampedMessage);
         }

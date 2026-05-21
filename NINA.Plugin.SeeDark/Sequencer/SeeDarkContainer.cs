@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using NINA.Core.Model;
 using NINA.Core.Model.Equipment;
+using NINA.Core.Utility;
 using NINA.Equipment.Model;
 using NINA.Image.FileFormat;
 using NINA.Image.Interfaces;
@@ -520,7 +521,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 var info = _plugin.CameraMediator.GetInfo();
                 if (info != null && info.Connected && !double.IsNaN(info.Temperature))
                     return info.Temperature;
-            } catch { }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] GetSensorTempFromMediator failed: {ex.Message}"); }
             return double.NaN;
         }
 
@@ -558,7 +559,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                         ? DateTime.MinValue
                         : DateTime.Parse(dateStr, CultureInfo.InvariantCulture);
                     results.Add(new MasterRecord(path, masterTemp, exp, gain, scopeId, date));
-                } catch { }
+                } catch (Exception ex) { Logger.Warning($"[SeeDark] ScanMasterFolder master parse failed: {ex.Message}"); }
             }
 
             Log($"🔭 Scanned {results.Count} master dark(s) from {folder}");
@@ -616,7 +617,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
                 File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {timestampedMessage}{Environment.NewLine}");
-            } catch { }
+            } catch (Exception ex) { Logger.Warning($"[SeeDark] Log write failed: {ex.Message}"); }
             if (fileOnly) return;
             var mirrorDiscord = discordVerboseOnly ? _plugin.DiscordVerbosePerFrame : true;
             if (mirrorDiscord)
