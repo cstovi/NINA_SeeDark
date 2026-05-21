@@ -28,6 +28,7 @@ If you use and like anything I've done, support on Ko-fi (https://ko-fi.com/turn
 [assembly: AssemblyProduct("NINA.Plugin.SeeDark")]
 [assembly: AssemblyVersion("1.21.0.0")]
 [assembly: AssemblyFileVersion("1.21.0.0")]
+[assembly: AssemblyMetadata("Homepage", "https://ko-fi.com/turnpike47298")]
 [assembly: AssemblyMetadata("ChangelogURL", "https://github.com/cstovi/NINA_SeeDark/releases")]
 [assembly: Guid("A5E7F3C1-2D4B-4A8E-9F1C-3B6D7E8A0F2C")]
 [assembly: ThemeInfo(
