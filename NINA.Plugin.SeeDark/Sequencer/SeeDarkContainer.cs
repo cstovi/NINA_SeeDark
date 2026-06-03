@@ -252,11 +252,12 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     } else {
                         await SaveRawDarkAsync(exposureData, token);
                         int previousTarget = targetBucket;
+                        int frameTonightCount = CountSameNightRawFrames(frameBucket, TargetExposure, Gain, scopeId, bucketStepC, sessionDate);
                         targetBucket = frameBucket;
                         goodFrames = 1;
                         lifetimeAccepted++;
                         consecutiveBucketMisses = 0;
-                        Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — drifted out of {previousTarget}°C target band; bucket {frameBucket}°C also has no acceptable master in the library — retargeting here ({goodFrames}/{targetFrames}); segment attempts reset to 0.", discordVerboseOnly: true);
+                        Log($"📸 Frame {attempts}: temp {frameTemp:F1}°C bucket {frameBucket}°C — drifted out of {previousTarget}°C target band; bucket {frameBucket}°C also has no master ({frameTonightCount}/{maxNeededFramesPerBucket} raws on disk) — retargeting here ({goodFrames}/{targetFrames}); segment attempts reset to 0.", discordVerboseOnly: true);
                         Log($"📷 Dark capture in progress for {targetBucket}°C bucket ({goodFrames}/{targetFrames} accepted).");
                         attempts = 0;
                         ReportAutoDarkCaptureProgress(progress, goodFrames, targetFrames);
@@ -361,7 +362,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 }
                 needsDarks = !currentSatisfied;
                 if (needsDarks) {
-                    Log("🌑 No matching master dark found — darks needed!");
+                    Log($"🌑 No matching master dark found for {bucket}°C bucket — {currentTonightCount}/{maxNeededFramesPerBucket} same-night raws on disk, collecting more for sufficiency.");
                 } else if (!lackCurrent) {
                     var matchedMaster = masters
                         .Where(r =>
@@ -404,11 +405,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
 
             if (autoBypassHighInBand) {
-                Log($"🌑 Missing master dark for {bucket}°C bucket; sensor {temp:F1}°C is high in-band but bucket {nextWarmerBucket}°C also has no master — starting Auto capture (may retarget upward).");
+                Log($"🌑 Missing master dark for {bucket}°C bucket; sensor {temp:F1}°C is high in-band but warmer bucket {nextWarmerBucket}°C also has no master ({nextWarmerTonightCount}/{maxNeededFramesPerBucket} raws on disk) — starting Auto capture (may retarget upward).");
                 return true;
             }
 
-            Log($"🌑 Missing master dark for {bucket}°C bucket and sensor {temp:F1}°C is inside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C — darks needed!");
+            Log($"🌑 Missing master dark for {bucket}°C bucket ({currentTonightCount}/{maxNeededFramesPerBucket} raws on disk) and sensor {temp:F1}°C is inside start window [{startThreshold:F1},{endThresholdExclusive:F1})°C — darks needed!");
             return true;
         }
 
