@@ -59,7 +59,7 @@ Saved to `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 - **AutoDarkMaxWarmerBucketSteps** — warmer retarget limit above start bucket
 - **DeleteRawsAfterMaxAge** — opt-in raw DARK cleanup
 - **WriteNinaLiveMasters** — also write NINALIVE-format masters
-- **DiscordWebhookUrl / DiscordGeneralWebhookUrl / DiscordVerbosePerFrame** — Discord integration
+- **DiscordWebhookUrl / DiscordGeneralWebhookUrl** — Discord integration
 
 Advanced hidden defaults: `PreBucketLeadC=2°C`, `MinFrameCount=20`, `MaxFrameCount=50`, `DefaultExecutionMode=Auto`.
 

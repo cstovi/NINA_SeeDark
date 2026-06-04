@@ -147,7 +147,6 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Discord webhook (Detail):" VerticalAlignment="Center" Margin="0,0,8,4"
                            ToolTip="Full verbose dark capture detail. Best used in a dedicated channel."/>
@@ -157,15 +156,11 @@
                            ToolTip="Minimal operational notifications, separate from the more verbose detail sent to the other webhook."/>
                 <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding DiscordGeneralWebhookUrl, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,4"
                          ToolTip="Minimal operational notifications, separate from the more verbose detail sent to the other webhook."/>
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Verbose per-frame lines:" VerticalAlignment="Center" Margin="0,4,8,4"
-                           ToolTip="Also send each per-frame auto dark line to Discord. Other log lines still mirror when a webhook URL is set. Very chatty; a dedicated channel is recommended."/>
-                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding DiscordVerbosePerFrame, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,4,0,6"
-                          ToolTip="Also send each per-frame auto dark line to Discord. Other log lines still mirror when a webhook URL is set. Very chatty; a dedicated channel is recommended."/>
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Scope name:" VerticalAlignment="Center" Margin="0,0,8,0"
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Scope name:" VerticalAlignment="Center" Margin="0,0,8,0"
                            ToolTip="If set, prepended to all Discord notifications as 'Name - message'. Sensor temp notifications already include scope model and serial (e.g. S30_5b948371)."/>
-                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding DiscordScopeName, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding DiscordScopeName, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
                          ToolTip="If set, prepended to all Discord notifications as 'Name - message'. Sensor temp notifications already include scope model and serial (e.g. S30_5b948371)."/>
-                <TextBlock Grid.Row="3" Grid.Column="2" Text="Optional" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="Optional" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
             </Grid>
 
         </StackPanel>

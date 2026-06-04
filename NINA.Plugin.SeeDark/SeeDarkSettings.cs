@@ -28,8 +28,6 @@ namespace NINA.Plugin.SeeDark {
         public string DiscordGeneralWebhookUrl { get; set; } = "";
         /// <summary>Optional label prepended to every Discord notification, e.g. "Backyard rig".</summary>
         public string DiscordScopeName { get; set; } = "";
-        /// <summary>When true, per-frame auto dark capture log lines are mirrored to Discord (noisy).</summary>
-        public bool DiscordVerbosePerFrame { get; set; } = false;
         public int TempBucketSize { get; set; } = 2;
         public int StackTolerance { get; set; } = 2;
         public int PreBucketLeadC { get; set; } = 2;

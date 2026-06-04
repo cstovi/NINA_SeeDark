@@ -64,7 +64,6 @@ namespace NINA.Plugin.SeeDark {
             DiscordWebhookUrl     = Settings.DiscordWebhookUrl;
             DiscordGeneralWebhookUrl = Settings.DiscordGeneralWebhookUrl;
             DiscordScopeName      = Settings.DiscordScopeName;
-            DiscordVerbosePerFrame = Settings.DiscordVerbosePerFrame;
             TempBucketSize        = Settings.TempBucketSize;
             StackTolerance        = Settings.StackTolerance;
             PreBucketLeadC        = Settings.PreBucketLeadC;
@@ -114,7 +113,6 @@ namespace NINA.Plugin.SeeDark {
                 Settings.DiscordWebhookUrl   = _discordWebhookUrl;
                 Settings.DiscordGeneralWebhookUrl = _discordGeneralWebhookUrl;
                 Settings.DiscordScopeName    = _discordScopeName;
-                Settings.DiscordVerbosePerFrame = _discordVerbosePerFrame;
                 Settings.TempBucketSize      = _tempBucketSize;
                 Settings.StackTolerance      = _stackTolerance;
                 Settings.PreBucketLeadC      = _preBucketLeadC;
@@ -146,7 +144,7 @@ namespace NINA.Plugin.SeeDark {
 
         /// <summary>
         /// Refreshes runtime fields from persisted settings so sequencer runs pick up option changes
-        /// made since plugin construction (for example, after toggling verbose Discord notifications).
+        /// made since plugin construction.
         /// </summary>
         public void RefreshRuntimeSettingsFromDisk() {
             try {
@@ -170,7 +168,6 @@ namespace NINA.Plugin.SeeDark {
                 Settings.DiscordWebhookUrl = latest.DiscordWebhookUrl;
                 Settings.DiscordGeneralWebhookUrl = latest.DiscordGeneralWebhookUrl;
                 Settings.DiscordScopeName = latest.DiscordScopeName;
-                Settings.DiscordVerbosePerFrame = latest.DiscordVerbosePerFrame;
                 Settings.TempBucketSize = latest.TempBucketSize;
                 Settings.StackTolerance = latest.StackTolerance;
                 Settings.PreBucketLeadC = latest.PreBucketLeadC;
@@ -188,7 +185,6 @@ namespace NINA.Plugin.SeeDark {
                 _discordWebhookUrl = latest.DiscordWebhookUrl;
                 _discordGeneralWebhookUrl = latest.DiscordGeneralWebhookUrl;
                 _discordScopeName = latest.DiscordScopeName;
-                _discordVerbosePerFrame = latest.DiscordVerbosePerFrame;
                 _tempBucketSize = latest.TempBucketSize;
                 _stackTolerance = latest.StackTolerance;
                 _preBucketLeadC = latest.PreBucketLeadC;
@@ -339,12 +335,6 @@ namespace NINA.Plugin.SeeDark {
         public string DiscordScopeName {
             get => _discordScopeName;
             set { _discordScopeName = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
-        }
-
-        private bool _discordVerbosePerFrame = false;
-        public bool DiscordVerbosePerFrame {
-            get => _discordVerbosePerFrame;
-            set { _discordVerbosePerFrame = value; RaisePropertyChanged(); SyncAndSaveSettings(); }
         }
 
         private int _tempBucketSize = 2;

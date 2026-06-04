@@ -55,11 +55,11 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             var darkPattern   = _plugin.GetNinaDarkFilePattern();
 
             if (string.IsNullOrWhiteSpace(rawFolder)) {
-                Log("❌ Raw dark scan root could not be resolved (configure NINA Image File Path) — aborting");
+                Log("❌ Raw scan root unresolved (configure NINA Image File Path) — aborting");
                 return;
             }
             if (!Directory.Exists(rawFolder)) {
-                Log($"❌ Raw dark scan root does not exist: {rawFolder} — aborting");
+                Log($"❌ Raw scan root not found: {rawFolder} — aborting");
                 return;
             }
             if (string.IsNullOrWhiteSpace(masterFolder)) {
@@ -125,14 +125,14 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                 bool shouldRebuildForMoreRaws = hasFreshMaster && hasKnownContributorCount && newStackCount > matchingMaster!.StackCount!.Value;
                 if (hasFreshMaster && !shouldRebuildForMoreRaws) {
                     if (!hasKnownContributorCount) {
-                        Log($"✅ Existing master is fresh for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} ({matchingMaster!.DateCreated:yyyy-MM-dd}) but STACKCNT is missing/invalid — skipping rebuild (legacy-safe)");
+                        Log($"✅ {key.TempBucket}°C/{key.Exposure:F0}s/g{key.Gain}/{key.ScopeId}: fresh, no STACKCNT — skipping (legacy).");
                     } else {
-                        Log($"✅ Existing master is fresh for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} ({matchingMaster!.DateCreated:yyyy-MM-dd}) with STACKCNT={matchingMaster!.StackCount}; eligible {sourceText} raws={eligibleCount} — skipping rebuild");
+                        Log($"✅ {key.TempBucket}°C/{key.Exposure:F0}s/g{key.Gain}/{key.ScopeId}: fresh (STACKCNT={matchingMaster!.StackCount}), {eligibleCount} raws — skipping.");
                     }
                     continue;
                 }
                 if (shouldRebuildForMoreRaws) {
-                    Log($"🔄 Existing master is fresh for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} but STACKCNT={matchingMaster!.StackCount} and eligible {sourceText} raws={eligibleCount} (cap {maxFrameCount}) — rebuilding");
+                    Log($"🔄 {key.TempBucket}°C/{key.Exposure:F0}s/g{key.Gain}/{key.ScopeId}: STACKCNT={matchingMaster!.StackCount}, {eligibleCount} raws — rebuilding.");
                 }
                 Log($"🔭 Group {key.TempBucket}°C [{lowerBound:F1},{upperBound:F1}) / {key.Exposure:F0}s / gain {key.Gain} / {key.ScopeId}: using {selectedFrames.Count}/{eligibleCount} most recent valid frame(s) from {sourceText}");
 
@@ -142,7 +142,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                         : shouldRebuildForMoreRaws
                             ? "more raws available"
                             : "expired";
-                    Log($"⚠️ Master {reason} for {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId}, but only {selectedFrames.Count} valid cached frame(s); need {minFrameCount}. Run a new dark sequence.");
+                    Log($"⚠️ {key.TempBucket}°C/{key.Exposure:F0}s/g{key.Gain}/{key.ScopeId}: {reason}, only {selectedFrames.Count}/{minFrameCount} frames.");
                     continue;
                 }
 
@@ -176,7 +176,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     .Take(5)
                     .ToList();
                 if (brightOutliers.Count > 0) {
-                    Log($"⚠️ Potential light leak: {brightOutliers.Count} unusually bright frame(s) above {brightnessThreshold:F2} mean ADU (showing up to 5)");
+                    Log($"⚠️ Light leak: {brightOutliers.Count} bright frame(s) >{brightnessThreshold:F2} ADU (showing up to 5)");
                     foreach (var name in brightOutliers) Log($"   • {name}");
                 }
                 var spatialMetrics = pixelArrays.Select(p => ComputeSpatialLeakMetric(p, width, height)).ToList();
@@ -194,18 +194,18 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                         .Select(x => Path.GetFileName(loadedFrames[x.index].Path))
                         .ToList();
                     Log(
-                        $"⚠️ Spatial leak check: {spatialFlags.Count}/{pixelArrays.Count} frame(s) show elevated corner glow " +
-                        $"(baseline corner/center ratio {baselineCornerToCenterRatio:F3}; trigger >= {baselineCornerToCenterRatio * 1.08:F3}).");
+                        $"⚠️ Corner glow: {spatialFlags.Count}/{pixelArrays.Count} frames " +
+                        $"(ratio {baselineCornerToCenterRatio:F3}, trigger ≥{baselineCornerToCenterRatio * 1.08:F3}).");
                     if (sampleNames.Count > 0)
-                        Log($"⚠️ Spatial leak examples: {string.Join(", ", sampleNames)}");
+                        Log($"⚠️ Spatial examples: {string.Join(", ", sampleNames)}");
                 }
                 var representativeSingleStd = Median(frameStats.Select(s => s.stdDev));
                 var masterStats = ComputeMeanStd(median);
                 Log($"📊 Noise stats: representative single-frame σ={representativeSingleStd:F2}, master σ={masterStats.stdDev:F2}");
                 if (masterStats.stdDev >= representativeSingleStd)
-                    Log("⚠️ Master noise is not lower than representative single-frame noise; inspect contributing raws.");
+                    Log("⚠️ Master noise ≥ single-frame noise — inspect raws.");
                 else
-                    Log("✅ Noise reduction check passed (master noise lower than representative single-frame noise).");
+                    Log("✅ Noise check passed.");
 
                 var prefix = $"master_dark_{key.Exposure:F0}s_{key.TempBucket}c_{key.ScopeId}_g{key.Gain}_";
                 foreach (var old in Directory.GetFiles(masterFolder, prefix + "*.fit*")) {
@@ -240,14 +240,14 @@ namespace NINA.Plugin.SeeDark.Sequencer {
                     : shouldRebuildForMoreRaws
                         ? "had more raw darks available"
                         : "had expired";
-                Log($"✅ Master Dark {key.TempBucket}°C/{key.Exposure:F0}s/gain {key.Gain}/{key.ScopeId} {reasonText}. Successfully rebuilt using cached raw frames from {newestUsedDate}.");
+                Log($"✅ {key.TempBucket}°C/{key.Exposure:F0}s/g{key.Gain}/{key.ScopeId} {reasonText}. Rebuilt from {newestUsedDate}.");
             }
 
             if (deleteRawsEnabled) {
                 PurgeRawDarksOlderThan(rawFolder, masterFolder, rawCutoff);
             }
 
-            Log("✅ Stack Master Darks complete");
+            Log("✅ Stack complete");
         }
 
         private void PurgeRawDarksOlderThan(string rawFolder, string masterFolder, DateTime cutoff) {
@@ -551,15 +551,12 @@ namespace NINA.Plugin.SeeDark.Sequencer {
         };
 
         private void Log(string msg) {
-            var timestampedMessage = _plugin.DiscordVerbosePerFrame
-                ? $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {msg}"
-                : msg;
             try {
                 Directory.CreateDirectory(Path.GetDirectoryName(_logFilePath)!);
-                File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {timestampedMessage}{Environment.NewLine}");
+                File.AppendAllText(_logFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {msg}{Environment.NewLine}");
             } catch (Exception ex) { Logger.Warning($"[SeeDark] Stacker log write failed: {ex.Message}"); }
             if (ShouldSendToDiscord(msg))
-                _ = _plugin.SendDiscordAsync(timestampedMessage);
+                _ = _plugin.SendDiscordAsync(msg);
         }
 
         private static bool ShouldSendToDiscord(string msg) {

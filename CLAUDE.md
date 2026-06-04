@@ -96,7 +96,6 @@ Persisted at `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 | `PreBucketLeadC` | int | 2 | Internal fixed pre-range lead (hidden in UI) |
 | `DiscordWebhookUrl` | string | _(empty)_ | Optional; mirrors log lines to Discord |
 | `DiscordGeneralWebhookUrl` | string | _(empty)_ | Optional; minimal operational notifications (start/stop), separate from verbose detail webhook |
-| `DiscordVerbosePerFrame` | bool | false | Also mirror per-frame auto dark lines (noisy; own channel recommended) |
 
 ## Master Discovery Source of Truth
 

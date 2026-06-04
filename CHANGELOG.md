@@ -6,6 +6,14 @@ All notable changes to this project are documented in this file.
 
 - Auto dark capture: set `FilterType` on each `CaptureSequence` so NINA exposure logs show the DARK filter name (matches filter wheel after `ChangeFilter`).
 
+## v1.3.0 - 2026-06-04
+
+- Simplified all Discord messages (NeedsDarks decisions, capture lifecycle, stacker results) — same signal (temp, bucket, counts, reason) in ~half the characters.
+- Per-frame 📸 capture lines and periodic progress lines are now log-file-only; no more frame-by-frame Discord noise.
+- Removed `DiscordVerbosePerFrame` setting and its UI checkbox — per-frame detail stays in the log file.
+- Removed stale "Verbose" reference from plugin catalog description.
+- Updated plugin metadata version to simplified `1.3.0.0` scheme.
+
 ## v1.23.0 - 2026-06-04
 
 - Public-readiness cleanup: added MPL-2.0 `LICENSE.txt`, removed tracked `$null` artifact, gitignored agent/temp directories (`inspecttmp/`, `.claude/`), deleted stale `tools/nina-src/` checkout

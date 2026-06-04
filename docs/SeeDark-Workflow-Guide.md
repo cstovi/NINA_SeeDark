@@ -177,10 +177,9 @@ Both files are the same median stack; NINALIVE is a quantized, NINA-friendly enc
 - Default: off.
 - Implication: enable only if you use a NINA workflow that needs 16-bit+BZERO masters; you will have twice as many master files per rebuild when on.
 
-### DiscordWebhookUrl / DiscordVerbosePerFrame
+### DiscordWebhookUrl / DiscordGeneralWebhookUrl
 
-- What it does: mirrors status to Discord.
-- Implication: verbose mode can be very chatty; best in a dedicated channel.
+- What it does: mirrors status to Discord. Per-frame detail goes to the log file only.
 
 ## What to check when behavior surprises you
 
