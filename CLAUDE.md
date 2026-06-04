@@ -52,7 +52,7 @@ Any meaningful project change must include updates to related user-facing text/d
   - optional in-place raw cleanup (`DeleteRawsAfterMaxAge`) is separate and off by default
 - Container UI: exposure and gain only (no execution-mode picker, no hint text); `Auto` is the default for new containers. Legacy sequences deserialized with `Manual` still work and show child UI when applicable.
 - Plugin options auto-save on edit (no manual Save button)
-- Notifications at the bottom: `Discord webhook URL`, optional **Verbose** per-frame auto dark lines (chatty; dedicated webhook/channel recommended)
+- Notifications at the bottom: `Discord webhook URL`, `Discord webhook (General)`, and `Scope name`
 - Design intent remains:
   - `SeeDarkContainer` = decision gate
   - Manual mode = user-controlled children (hidden from UI for now; see Next Planned Work)
