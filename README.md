@@ -23,6 +23,17 @@ Since SeeDark is not currently in the NINA plugin repository, install it manuall
 3. Set container exposure and gain to your intended dark profile.
 4. Run sequence.
 
+## Screenshots
+
+<img width="2306" height="187" alt="image" src="https://github.com/user-attachments/assets/3fa2b32f-9a08-48ca-8be7-2bed83c79418" />
+
+<img width="1111" height="1178" alt="image" src="https://github.com/user-attachments/assets/39976391-cb83-4f06-8f60-7427b1b23f11" />
+
+<img width="2122" height="527" alt="image" src="https://github.com/user-attachments/assets/a6a618bf-c7d5-4a97-ac49-158d5acf9a88" />
+
+<img width="2110" height="871" alt="image" src="https://github.com/user-attachments/assets/5937740a-6fe5-4aab-9e92-85a94c7a4614" />
+
+
 ## Main Components
 
 - **SeeDark Dark Manager** — sequence container that decides whether darks are needed. Auto mode (default) captures internally; legacy Manual mode exists for backward compatibility.
