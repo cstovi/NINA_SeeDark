@@ -41,7 +41,7 @@ Any meaningful project change must include updates to related user-facing text/d
 9. **Auto raw sufficiency guard:** same-night raw counts are evaluated per key `(bucket, exposure, gain, scopeId)` using session-date rebasing (`hour < 12` => previous day). If a bucket already has enough same-night raws (`MaxFrameCount`, currently 50), additional capture for that bucket is skipped. To preserve uncooled thermal progression into a needed warmer bucket, bounded overshoot in the current bucket is allowed up to 60 raws.
 10. **Auto only — proactive next bucket:** If the **current** bucket is already satisfied (acceptable master, or enough same-night raws) but the **next warmer** bucket still needs collection, start Auto capture immediately (no start-window wait), target the next warmer bucket, and take **warmup** exposures while still colder (not counted toward target / no drift stop) until the sensor reaches the target band.
 
-## Current Session State (May 2026)
+## Current Session State (June 2026)
 
 - Plugin is intentionally in **simple thermal mode**:
   - bucket size user-selectable as `2°C` or `3°C`
@@ -68,8 +68,8 @@ Any meaningful project change must include updates to related user-facing text/d
 6. Per-pixel median stack → F32 master (BITPIX=-32, float32) + optional NINALIVE master (BITPIX=16, BZERO=32768)
 7. Deletes superseded masters for the same group key before writing
 8. If raw cleanup is enabled, DARK raws older than `MaxAgeDays` are deleted in place from the raw-dark scan root
-10. Master discovery remains header-driven by scanning `MasterLibraryFolder` FITS files (no CSV index dependency)
-11. New masters include `STACKCNT` in FITS headers so future runs can detect whether more valid raws are now available for a quality-improving rebuild
+9. Master discovery remains header-driven by scanning `MasterLibraryFolder` FITS files (no CSV index dependency)
+10. New masters include `STACKCNT` in FITS headers so future runs can detect whether more valid raws are now available for a quality-improving rebuild
 
 FITS I/O is inline — no NuGet. Uses `System.Buffers.Binary.BinaryPrimitives` for big-endian reads/writes. Headers are 80-char fixed-width cards in 2880-byte blocks.
 

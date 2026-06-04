@@ -2,24 +2,9 @@
 
 SeeDark helps Seestar users manage dark frames in N.I.N.A. by only capturing/stacking when masters are missing, stale, or can be materially improved with more valid raws.
 
-At runtime, it checks for a matching master dark by:
+## License
 
-- non-overlapping temperature bucket (`2C` or `3C`),
-- exposure (`+-0.5s` tolerance),
-- exact gain,
-- exact scope ID,
-- max age (`MaxAgeDays`).
-
-If a valid master exists, it skips capture. If not, it captures internally using the current Auto workflow.
-
-## Main Components
-
-- `SeeDark Dark Manager` (sequence container)
-  - Decision gate for "is dark needed?"
-  - Auto capture is the primary runtime behavior for current releases
-  - Legacy Manual child-instruction path still exists internally for backward compatibility, but is hidden from the normal UI
-- `SeeDark Stack Master Darks` (sequence instruction)
-  - Scans raw dark FITS and builds master FITS
+Mozilla Public License 2.0 — see `LICENSE.txt`.
 
 ## Install
 
@@ -38,118 +23,39 @@ Since SeeDark is not currently in the NINA plugin repository, install it manuall
 3. Set container exposure and gain to your intended dark profile.
 4. Run sequence.
 
-For a plain-English explanation of runtime behavior and settings implications, see:
+## Main Components
 
-- `docs/SeeDark-Workflow-Guide.md`
+- **SeeDark Dark Manager** — sequence container that decides whether darks are needed. Auto mode (default) captures internally; legacy Manual mode exists for backward compatibility.
+- **SeeDark Stack Master Darks** — sequence instruction that scans raw dark FITS and builds per-pixel median master FITS.
 
-Notes:
+## Behavior Overview
 
-- Current container workflow is Auto dark capture.
-- Current simple UI exposes exposure/gain only on the container.
-- Manual mode is not a normal user-facing mode at this time and should be treated as legacy/internal behavior.
+At runtime SeeDark checks for a matching master dark by temperature bucket (2°C or 3°C), exposure (±0.5s), gain, scope ID, and max age. Missing or stale → captures; valid → skips. Auto capture uses segment-based collection with temperature drift guard, can retarget to cooler/warmer missing buckets, and includes same-night raw sufficiency checks to avoid over-collecting.
 
-## Auto Capture Behavior
+For a detailed plain-English explanation of all runtime behavior, settings implications, and troubleshooting, see:
 
-In Auto mode the container:
+➡ **[SeeDark Workflow Guide](docs/SeeDark-Workflow-Guide.md)**
 
-- uses `DARK` filter and image type,
-- uses container exposure/gain (offset remains camera default),
-- captures by segment: target 30 accepted, min 20 to stack, up to 30 attempts per segment,
-- applies drift guard logic so capture stops when no longer needed for the current target bucket.
+## Settings
 
-Temperature movement behavior:
+Saved to `%LOCALAPPDATA%\NINA\SeeDark\settings.json`.
 
-- run starts with an anchor bucket,
-- missing-master retarget to cooler buckets is allowed,
-- missing-master retarget to warmer buckets is allowed only up to `AutoDarkMaxWarmerBucketSteps` above anchor,
-- each allowed retarget resets segment attempt count.
+- **Target Exposure** — exposure to match/capture
+- **Gain** — camera gain
+- **MaxAgeDays** — freshness window for acceptable masters
+- **Master Library Folder** — where masters are written and scanned
+- **Temp Bucket Size** — 2°C or 3°C
+- **AutoDarkMaxWarmerBucketSteps** — warmer retarget limit above start bucket
+- **DeleteRawsAfterMaxAge** — opt-in raw DARK cleanup
+- **WriteNinaLiveMasters** — also write NINALIVE-format masters
+- **DiscordWebhookUrl / DiscordGeneralWebhookUrl / DiscordVerbosePerFrame** — Discord integration
 
-Proactive next-bucket behavior (Auto only):
-
-- if current bucket is already satisfied (fresh master, or enough same-night raws cached) but the next warmer bucket still needs collection, SeeDark starts immediately for that warmer bucket (no start-window wait),
-- while still below target band, it takes warmup exposures that are not counted toward the accepted-frame target and do not trigger drift-stop logic.
-
-Same-night raw sufficiency guard:
-
-- Auto checks same-night raw dark count per key `(temp bucket, exposure, gain, scope ID)` and avoids extra capture once enough raws are already cached for that bucket.
-- To preserve A->B thermal progression on uncooled sensors, Auto may temporarily overshoot bucket A up to 60 raws while warming into a needed bucket B.
-- The intent is to avoid all-night over-capture in stable temperatures, while still allowing useful warmer-bucket seeding.
-
-## Raw DARKs and stacking (important)
-
-The stacker (and same-night raw checks) discover raw DARK FITS under NINA **Image File Path**, **narrowed** to a `DARKs`-style subtree when your DARK **pattern** includes `$$IMAGETYPE$$` in a folder segment (see NINA file pattern settings).
-
-**If that resolved root is the same place you store lights, flats, and other FITS** (for example, pattern only varies the file name, not folders), SeeDark still has to enumerate **every** `*.fit*` there and open headers until it finds `FILTER=DARK`. On a large library that is slow and can look like a hang.
-
-**What to do:** configure NINA so DARK saves live under a dedicated branch of **Image File Path**—typically a pattern with `$$IMAGETYPE$$` in the path (e.g. `CALIBRATION\DARKs\...`). Then stacking stays scoped to a smaller tree without any SeeDark-only path override.
-
-## Stacker and Lifecycle
-
-`SeeDark Stack Master Darks`:
-
-- scans the resolved raw-dark root recursively for FITS, keeps frames whose headers identify them as DARKs,
-- groups by `(temp bucket, exposure, gain, scope ID)`,
-- uses most recent valid frames within age rules,
-- rebuilds masters when:
-  - missing,
-  - expired, or
-  - fresh but `STACKCNT` is present and more eligible raws now exist than were previously stacked,
-- always writes one **float32 (F32)** master per group; optionally also a **NINA-format (NINALIVE)** master when enabled in plugin options (see below).
-
-### Master output formats (F32 vs NINA)
-
-Every successful stack writes a **default F32 master** (`…_F32_<timestamp>.fit`). That is the normal output: 32-bit float pixels (`BITPIX=-32`), full precision from the median stack, suitable for Siril, PixInsight, and other general calibration workflows.
-
-The optional **NINA master** (`…_NINALIVE_<timestamp>.fit`) is the same stacked data encoded like a camera frame: unsigned 16-bit storage with `BITPIX=16`, `BZERO=32768`, and `BSCALE=1` so NINA plugins that expect signed 16-bit FITS (for example **Livestack**) can load it. Enable it with **Additional NINA masters** in plugin settings (`WriteNinaLiveMasters`; off by default). When enabled, you get **both** files for each rebuild—not a replacement for F32.
-
-Runtime dark matching (gap check and stacker rebuild logic) uses FITS headers (`IMAGETYP`, `CCD-TEMP`, `EXPTIME`, `GAIN`, `INSTRUME`, age, `STACKCNT`); either filename suffix works if headers match. Superseded masters for a group are removed together before a new pair is written.
-
-Contributor metadata notes:
-
-- newly written masters include `STACKCNT` in FITS headers (`number of raws stacked`),
-- count-based rebuilds are only attempted when the existing master has a valid `STACKCNT` value,
-- legacy masters without `STACKCNT` remain on missing/expired-only rebuild behavior.
-
-Operational guidance:
-
-- In normal use, run stacking once near end of session rather than after every dark container.
-
-Lifecycle controls are opt-in:
-
-- `Delete old raw darks`
-  - deletes DARK raws older than `MaxAgeDays` under the same resolved raw-dark root as the stacker.
-  - disabled by default; irreversible when enabled.
-
-## Current Settings Snapshot
-
-Saved to `%LOCALAPPDATA%\\NINA\\SeeDark\\settings.json`.
-
-Common user-facing options include:
-
-- target exposure, gain, max age,
-- master library folder (runtime),
-- temp bucket size (`2C` or `3C`),
-- optional old-raw cleanup option,
-- optional Discord webhook + verbose per-frame posting.
-
-Advanced/internal controls (not shown in normal UI) include:
-
-- pre-bucket lead (`PreBucketLeadC`),
-- internal stack/capture guardrails (`MinFrameCount`, `MaxFrameCount`),
-- `DefaultExecutionMode` (reserved for advanced/manual workflows).
-
-## Notes for Existing Libraries
-
-If you want to keep pre-plugin masters untouched, use a dedicated `Master library folder` for SeeDark-managed masters.
-
-For **raw DARKs**, use a NINA layout that puts DARKs under their own subtree when possible so **Stack Master Darks** does not scan your entire library (see **Raw DARKs and stacking** above).
-
-Auto capture writes DARK raws via NINA's DARK pattern under the same resolved root. If save fails, Auto capture aborts immediately.
+Advanced hidden defaults: `PreBucketLeadC=2°C`, `MinFrameCount=20`, `MaxFrameCount=50`, `DefaultExecutionMode=Auto`.
 
 ## Logs
 
-- Container logs: `%LOCALAPPDATA%\\NINA\\SeeDark\\seedark_yyyy-MM-dd_HH-mm-ss.log`
-- Stacker logs: `%LOCALAPPDATA%\\NINA\\SeeDark\\stack_yyyy-MM-dd_HH-mm-ss.log`
+- Container: `%LOCALAPPDATA%\NINA\SeeDark\seedark_yyyy-MM-dd_HH-mm-ss.log`
+- Stacker: `%LOCALAPPDATA%\NINA\SeeDark\stack_yyyy-MM-dd_HH-mm-ss.log`
 
 ## Releases
 
