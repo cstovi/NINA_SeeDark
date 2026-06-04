@@ -4,5 +4,7 @@ obj/
 .vs/
 tools/
 tools/dark_temp_analysis_*.txt
-.claude/settings.local.json
+$null
+inspecttmp/
+.claude/
 .codex-jobs/

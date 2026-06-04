@@ -282,7 +282,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             } else if (goodFrames >= minFrames) {
                 Log($"✅ Auto dark capture stopped with {goodFrames} accepted for bucket {targetBucket}°C (below target {targetFrames} but ≥{minFrames} to stack; {lifetimeAccepted} accepted in total across bucket(s)).");
             } else {
-                Log($"⚠️ Auto dark capture stopped after {attempts} attempt(s) in the final segment with {goodFrames} accepted for bucket {targetBucket}°C (need {minFrames}+ there to stack that group). {lifetimeAccepted} frame(s) accepted in total this run across bucket(s) — earlier buckets have their own partial sets on disk. Run again when temperature is stable.");
+                Log($"⚠️ Auto dark capture stopped after {attempts} attempt(s) in the final segment with {goodFrames} accepted for bucket {targetBucket}°C (need {minFrames}+ there to stack that group). {lifetimeAccepted} frame(s) accepted in total this run across bucket(s) — earlier buckets have their own partial sets on disk.");
             }
         }
 

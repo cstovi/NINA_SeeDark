@@ -6,11 +6,14 @@ All notable changes to this project are documented in this file.
 
 - Auto dark capture: set `FilterType` on each `CaptureSequence` so NINA exposure logs show the DARK filter name (matches filter wheel after `ChangeFilter`).
 
-## v1.21.0 - 2026-05-20
+## v1.23.0 - 2026-06-04
 
-- Stack Master Darks: fixed unnecessary rebuilds when eligible raw count exceeded the stack cap (`MaxFrameCount`). The rebuild trigger now compares the would-be new stack size against the previous master's `STACKCNT`, so masters only rebuild when the actual stacked frame count would increase.
-
-## [Unreleased]
+- Public-readiness cleanup: added MPL-2.0 `LICENSE.txt`, removed tracked `$null` artifact, gitignored agent/temp directories (`inspecttmp/`, `.claude/`), deleted stale `tools/nina-src/` checkout
+- Removed redundant "Run again when temperature is stable" auto-capture log line
+- Include existing raw dark count in all "no master" log messages for clarity
+- Stack Master Darks: fixed unnecessary rebuilds when eligible raw count exceeded the stack cap (`MaxFrameCount`). The rebuild trigger now compares the would-be new stack size against the previous master's `STACKCNT`, so masters only rebuild when the actual stacked frame count would increase
+- Replaced silent empty catch blocks with `Logger.Warning` across settings, plugin, container, and stacker for better debugging
+- Added Ko-fi homepage link to plugin metadata; removed stale CLAUDE.md sections
 
 ## v1.17.0 - 2026-05-10
 
