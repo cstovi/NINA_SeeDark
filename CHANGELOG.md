@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.4.0 - 2026-06-06
+
+- Discord messages across NeedsDarks, Auto capture, and stacker rewritten to be shorter and cleaner.
+- DLL rebuilt with all Discord rewording baked in.
+
 ## v1.18.0 - 2026-05-18
 
 - Auto dark capture: set `FilterType` on each `CaptureSequence` so NINA exposure logs show the DARK filter name (matches filter wheel after `ChangeFilter`).
