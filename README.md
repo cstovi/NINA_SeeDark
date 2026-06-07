@@ -31,8 +31,6 @@ Since SeeDark is not currently in the NINA plugin repository, install it manuall
 
 <img width="2122" height="527" alt="image" src="https://github.com/user-attachments/assets/a6a618bf-c7d5-4a97-ac49-158d5acf9a88" />
 
-<img width="2110" height="871" alt="image" src="https://github.com/user-attachments/assets/5937740a-6fe5-4aab-9e92-85a94c7a4614" />
-
 
 ## Main Components
 
