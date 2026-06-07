@@ -68,6 +68,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             Directory.CreateDirectory(masterFolder);
             bool deleteRawsEnabled = _plugin.Settings.DeleteRawsAfterMaxAge;
 
+            Log("🔧 SeeDark master stacking started");
             Log($"🔭 Scanning {rawFolder}");
             if (!string.Equals(Path.GetFullPath(rawFolder), Path.GetFullPath(imageFileRoot), StringComparison.OrdinalIgnoreCase))
                 Log($"🔭 Scan limited to DARK subtree (NINA image file path is {imageFileRoot}).");
