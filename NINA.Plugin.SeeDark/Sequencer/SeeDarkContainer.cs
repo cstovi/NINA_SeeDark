@@ -405,7 +405,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
             }
 
             if (autoBypassHighInBand) {
-                Log($"🌑 {bucket}°C: sensor high in-band, warmer {nextWarmerBucket}°C also missing ({nextWarmerTonightCount}/{maxNeededFramesPerBucket} raws) — starting, may retarget up.");
+                Log($"🌑 {bucket}°C: sensor high in-band, warmer {nextWarmerBucket}°C also missing master (but {nextWarmerTonightCount}/{maxNeededFramesPerBucket} raws) — starting, may retarget up.");
                 return true;
             }
 
