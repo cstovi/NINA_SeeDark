@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## v1.5.1 - 2026-06-07
+## v1.6.0 - 2026-06-07
 
 - Fixed ambiguous container log: "warmer 32°C also missing (56/50 raws)" → "warmer 32°C also missing master (but 56/50 raws)" so the two facts (no master / sufficient raws) are clearly separated.
 - Added "🔧 SeeDark master stacking started" header at the top of stacker output so log readers can distinguish container from stacker phases at a glance.
