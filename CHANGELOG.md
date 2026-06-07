@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.5.0 - 2026-06-06
+
+- Fixed "Stopped after 0 attempts" log: split `attempts` counter into display-only (never reset) + segment counter (reset on retarget) so the message shows the true attempt count.
+- Removed `🔁 Retargeting allowed` Discord line (implementation detail, not useful on Discord).
+- Restructured NeedsDarks logging: no more contradictory dual messages per run; `⏳` skip now shows warmer-bucket status (e.g. `32°C OK via master`) so bypass reasoning is visible.
+- "collecting more" only fires when capture actually proceeds, not before the window check.
+
 ## v1.4.0 - 2026-06-06
 
 - Discord messages across NeedsDarks, Auto capture, and stacker rewritten to be shorter and cleaner.
