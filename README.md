@@ -1,6 +1,6 @@
 # NINA SeeDark
 
-SeeDark helps Seestar users manage dark frames in N.I.N.A. by only capturing/stacking when masters are missing, stale, or can be materially improved with more valid raws.
+SeeDark helps Seestar users manage dark frames in N.I.N.A. by only capturing/stacking when masters are missing, stale, or can be improved with more valid raws.
 
 ## License
 
