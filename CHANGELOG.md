@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.7.0 - 2026-08-18
+
+- Added plugin-manager zip packaging: the release workflow now produces a versioned zip (NINA plugin manager format) plus SHA256 sidecar alongside the raw DLL.
+
 ## v1.6.0 - 2026-06-07
 
 - Fixed ambiguous container log: "warmer 32°C also missing (56/50 raws)" → "warmer 32°C also missing master (but 56/50 raws)" so the two facts (no master / sufficient raws) are clearly separated.
