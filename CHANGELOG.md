@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## v1.7.0 - 2026-08-18
+## v1.8.0 - 2026-08-18
 
 - Added plugin-manager zip packaging: the release workflow now produces a versioned zip (NINA plugin manager format) plus SHA256 sidecar alongside the raw DLL.
 
