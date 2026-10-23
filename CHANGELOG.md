@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## v1.24.0 - 2026-10-23
+
+- New master darks write `IMAGETYP='DARK'` without trailing spaces inside the FITS string value. Existing masters are unchanged.
+
 ## v1.8.0 - 2026-08-18
 
 - Added plugin-manager zip packaging: the release workflow now produces a versioned zip (NINA plugin manager format) plus SHA256 sidecar alongside the raw DLL.

@@ -48,6 +48,8 @@ Manual install is an alternative if you prefer not to use the repository:
 - **SeeDark Dark Manager** — sequence container that decides whether darks are needed. Auto mode (default) captures internally; legacy Manual mode exists for backward compatibility.
 - **SeeDark Stack Master Darks** — sequence instruction that scans raw dark FITS and builds per-pixel median master FITS.
 
+New masters store `IMAGETYP='DARK'` without trailing spaces inside the value; existing master files are not changed.
+
 ## Behavior Overview
 
 At runtime SeeDark checks for a matching master dark by temperature bucket (2°C or 3°C), exposure (±0.5s), gain, scope ID, and max age. Missing or stale → captures; valid → skips. Auto capture uses segment-based collection with temperature drift guard, can retarget to cooler/warmer missing buckets, and includes same-night raw sufficiency checks to avoid over-collecting.

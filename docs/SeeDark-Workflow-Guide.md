@@ -171,6 +171,8 @@ Below are the main settings and what changing them usually means.
 
 Both files are the same median stack; NINALIVE is a quantized, NINA-friendly encoding of that data—not a different stack. Headers (`EXPTIME`, `CCD-TEMP`, `GAIN`, `INSTRUME`, `STACKCNT`, etc.) are the same on both. SeeDark’s gap check and stacker matching read headers, not the `F32` vs `NINALIVE` token in the filename.
 
+New masters use `IMAGETYP='DARK'` without trailing spaces inside the quoted FITS value for software that matches it exactly. Existing masters are left as they are.
+
 ### WriteNinaLiveMasters (**Additional NINA masters**)
 
 - What it does: turns on the optional **NINALIVE** file above; F32 is still always written.

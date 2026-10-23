@@ -539,7 +539,7 @@ namespace NINA.Plugin.SeeDark.Sequencer {
 
         private static string FitsCardStr(string kw, string strVal) {
             kw = kw.PadRight(8)[..8].ToUpper();
-            var quoted = $"'{strVal.PadRight(8)}'";
+            var quoted = $"'{strVal}'";
             return $"{kw}= {quoted,-20}".PadRight(80)[..80];
         }
 

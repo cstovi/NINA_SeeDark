@@ -70,6 +70,7 @@ Any meaningful project change must include updates to related user-facing text/d
 8. If raw cleanup is enabled, DARK raws older than `MaxAgeDays` are deleted in place from the raw-dark scan root
 9. Master discovery remains header-driven by scanning `MasterLibraryFolder` FITS files (no CSV index dependency)
 10. New masters include `STACKCNT` in FITS headers so future runs can detect whether more valid raws are now available for a quality-improving rebuild
+11. New master FITS headers write `IMAGETYP='DARK'` without padding inside the quoted value (older masters are not rewritten)
 
 FITS I/O is inline — no NuGet. Uses `System.Buffers.Binary.BinaryPrimitives` for big-endian reads/writes. Headers are 80-char fixed-width cards in 2880-byte blocks.
 
